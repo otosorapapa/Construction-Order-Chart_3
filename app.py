@@ -754,37 +754,69 @@ def compute_monthly_aggregation(df: pd.DataFrame, fiscal_range: Tuple[date, date
 
 def render_sidebar(df: pd.DataFrame, masters: Dict[str, List[str]]) -> FilterState:
     st.sidebar.header("条件設定")
-    fiscal_year = st.sidebar.selectbox("事業年度", FISCAL_YEAR_OPTIONS, index=FISCAL_YEAR_OPTIONS.index(DEFAULT_FISCAL_YEAR))
+    fiscal_year = st.sidebar.selectbox(
+        "事業年度",
+        FISCAL_YEAR_OPTIONS,
+        index=FISCAL_YEAR_OPTIONS.index(DEFAULT_FISCAL_YEAR),
+        help="対象とする事業年度を選択すると全体の集計期間が更新されます。",
+    )
     start, end = get_fiscal_year_range(fiscal_year)
 
-    st.sidebar.subheader("フィルタ")
-    period_from = st.sidebar.date_input("期間 From", value=start)
-    period_to = st.sidebar.date_input("期間 To", value=end)
-    if period_from > period_to:
-        st.sidebar.warning("期間 From が To より後になっています。値を入れ替えました。")
-        period_from, period_to = period_to, period_from
+    with st.sidebar.expander("フィルタ", expanded=False):
+        st.caption("フィルターを変更するとグラフや表が即座に更新されます。")
+        period_from = st.date_input("期間 From", value=start, help="着工・竣工日の範囲で絞り込みます。")
+        period_to = st.date_input("期間 To", value=end, help="着工・竣工日の範囲で絞り込みます。")
+        if period_from > period_to:
+            st.warning("期間 From が To より後になっています。値を入れ替えました。")
+            period_from, period_to = period_to, period_from
 
-    status_options = sorted(df["ステータス"].dropna().unique())
-    category_options = get_active_master_values(masters, "categories")
-    contractor_options = sorted(df["元請区分"].dropna().unique())
-    client_options = get_active_master_values(masters, "clients")
-    manager_options = get_active_master_values(masters, "managers")
-    prefecture_options = sorted(df["現場所在地"].dropna().unique())
+        status_options = sorted(df["ステータス"].dropna().unique())
+        category_options = get_active_master_values(masters, "categories")
+        contractor_options = sorted(df["元請区分"].dropna().unique())
+        client_options = get_active_master_values(masters, "clients")
+        manager_options = get_active_master_values(masters, "managers")
+        prefecture_options = sorted(df["現場所在地"].dropna().unique())
 
-    status = st.sidebar.multiselect("案件ステータス", status_options)
-    category = st.sidebar.multiselect("工種", category_options)
-    contractor = st.sidebar.multiselect("元請区分", contractor_options)
-    clients = st.sidebar.multiselect("主要取引先", client_options)
-    managers = st.sidebar.multiselect("担当者", manager_options)
-    prefectures = st.sidebar.multiselect("現場所在地 (都道府県)", prefecture_options)
-    margin_min, margin_max = st.sidebar.slider("粗利率レンジ (%)", -100, 100, (-100, 100))
-    filter_mode = st.sidebar.radio("条件の組み合わせ", ["AND", "OR"], index=0)
-    search_text = st.sidebar.text_input("フリーワード検索", placeholder="案件名・得意先など")
-    search_targets = st.sidebar.multiselect(
-        "検索対象",
-        ["案件名", "得意先", "担当者", "協力会社", "工種"],
-        default=["案件名", "得意先"],
-    )
+        status = st.multiselect(
+            "案件ステータス",
+            status_options,
+            placeholder="ステータス名を検索…",
+            help="キーワード検索や Enter キーで素早く選択できます。",
+        )
+        category = st.multiselect(
+            "工種",
+            category_options,
+            placeholder="工種名を検索…",
+            help="複数選択や削除はタップ/クリックで直感的に操作できます。",
+        )
+        contractor = st.multiselect(
+            "元請区分",
+            contractor_options,
+            placeholder="元請区分を検索…",
+        )
+        clients = st.multiselect(
+            "主要取引先",
+            client_options,
+            placeholder="取引先を検索…",
+        )
+        managers = st.multiselect(
+            "担当者",
+            manager_options,
+            placeholder="担当者を検索…",
+        )
+        prefectures = st.multiselect(
+            "現場所在地 (都道府県)",
+            prefecture_options,
+            placeholder="所在地を検索…",
+        )
+        margin_min, margin_max = st.slider("粗利率レンジ (%)", -100, 100, (-100, 100))
+        filter_mode = st.radio("条件の組み合わせ", ["AND", "OR"], index=0)
+        search_text = st.text_input("フリーワード検索", placeholder="案件名・得意先など")
+        search_targets = st.multiselect(
+            "検索対象",
+            ["案件名", "得意先", "担当者", "協力会社", "工種"],
+            default=["案件名", "得意先"],
+        )
 
     st.sidebar.subheader("表示設定")
     color_key = st.sidebar.selectbox("色分けキー", ["ステータス", "工種", "元請区分"])
@@ -949,14 +981,14 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame) -> Non
         "回収終了日": st.column_config.DateColumn("回収終了日"),
         "支払開始日": st.column_config.DateColumn("支払開始日"),
         "支払終了日": st.column_config.DateColumn("支払終了日"),
-        "受注予定額": st.column_config.NumberColumn("受注予定額", format="%d"),
-        "受注金額": st.column_config.NumberColumn("受注金額", format="%d"),
-        "予算原価": st.column_config.NumberColumn("予算原価", format="%d"),
-        "予定原価": st.column_config.NumberColumn("予定原価", format="%d"),
-        "実績原価": st.column_config.NumberColumn("実績原価", format="%d"),
-        "粗利率": st.column_config.NumberColumn("粗利率", format="%0.1f"),
-        "進捗率": st.column_config.NumberColumn("進捗率", format="%0.1f"),
-        "月平均必要人数": st.column_config.NumberColumn("月平均必要人数", format="%0.1f"),
+        "受注予定額": st.column_config.NumberColumn("受注予定額", format="%d", min_value=0),
+        "受注金額": st.column_config.NumberColumn("受注金額", format="%d", min_value=0),
+        "予算原価": st.column_config.NumberColumn("予算原価", format="%d", min_value=0),
+        "予定原価": st.column_config.NumberColumn("予定原価", format="%d", min_value=0),
+        "実績原価": st.column_config.NumberColumn("実績原価", format="%d", min_value=0),
+        "粗利率": st.column_config.NumberColumn("粗利率", format="%0.1f", min_value=-100, max_value=100),
+        "進捗率": st.column_config.NumberColumn("進捗率", format="%0.1f", min_value=0, max_value=100),
+        "月平均必要人数": st.column_config.NumberColumn("月平均必要人数", format="%0.1f", min_value=0),
         "粗利額": st.column_config.NumberColumn("粗利額", format="%d", disabled=True),
         "原価率": st.column_config.NumberColumn("原価率", format="%0.1f", disabled=True),
         "受注差異": st.column_config.NumberColumn("受注差異", format="%d", disabled=True),
@@ -971,6 +1003,15 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame) -> Non
         "リスクコメント": st.column_config.TextColumn("リスクコメント", disabled=True),
     }
 
+    column_config.update(
+        {
+            "id": st.column_config.TextColumn("案件ID", required=True, pinned="left"),
+            "案件名": st.column_config.TextColumn("案件名", required=True, pinned="left", width="large"),
+            "ステータス": st.column_config.TextColumn("ステータス", pinned="left"),
+            "竣工日": st.column_config.DateColumn("竣工日", pinned="left"),
+        }
+    )
+
     edited = st.data_editor(
         display_df,
         num_rows="dynamic",
@@ -980,7 +1021,33 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame) -> Non
         column_config=column_config,
         key="project_editor",
     )
-    if st.button("保存", type="primary"):
+
+    # 入力値の即時バリデーション
+    preview_df = edited.copy()
+    try:
+        for col in PROJECT_DATE_COLUMNS:
+            if col in preview_df.columns:
+                preview_df[col] = pd.to_datetime(preview_df[col], errors="coerce").dt.date
+        for col in PROJECT_NUMERIC_COLUMNS:
+            if col in preview_df.columns:
+                preview_df[col] = pd.to_numeric(preview_df[col], errors="coerce")
+        preview_valid, preview_errors = validate_projects(preview_df)
+    except Exception as exc:
+        preview_valid = False
+        preview_errors = [f"入力値の検証中にエラーが発生しました: {exc}"]
+
+    if not preview_valid and preview_errors:
+        st.warning("入力内容に修正が必要です。保存前にエラーを解消してください。")
+        for msg in preview_errors:
+            st.error(msg)
+
+    action_cols = st.columns([1, 1, 4])
+    save_clicked = action_cols[0].button("変更を保存", type="primary")
+    cancel_clicked = action_cols[1].button("キャンセル", help="最後に保存した状態に戻します。")
+    if cancel_clicked:
+        st.experimental_rerun()
+
+    if save_clicked:
         try:
             for col in PROJECT_DATE_COLUMNS:
                 if col in edited.columns:
@@ -998,9 +1065,53 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame) -> Non
             remaining = full_df[~full_df["id"].isin(persist_df["id"])]
             combined = pd.concat([persist_df, remaining], ignore_index=True)
             save_projects(combined)
-            st.success("保存しました。ページを再読み込みしてください。")
+            st.success("保存が完了しました。必要に応じてページを再読み込みしてください。")
+            st.toast("案件データを保存しました。", icon="✅")
         except Exception as exc:
             st.error(f"保存中にエラーが発生しました: {exc}")
+
+    st.markdown("#### 案件詳細プレビュー")
+    st.caption("一覧の行をクリックすると詳細が表示されます。")
+    summary_view = display_df[[col for col in ["id", "案件名", "ステータス", "竣工日", "得意先"] if col in display_df.columns]]
+    st.dataframe(
+        summary_view,
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "id": st.column_config.TextColumn("案件ID", pinned="left"),
+            "案件名": st.column_config.TextColumn("案件名", width="large", pinned="left"),
+            "竣工日": st.column_config.DateColumn("竣工日"),
+        },
+        key="project_selector",
+    )
+
+    selection_state = st.session_state.get("project_selector")
+    selected_indices: List[int] = []
+    if isinstance(selection_state, dict):
+        selected_indices = selection_state.get("selection", {}).get("rows", [])  # type: ignore[arg-type]
+
+    if selected_indices:
+        selected_row = display_df.iloc[selected_indices[0]]
+        with st.expander(f"{selected_row['案件名']} の詳細", expanded=True):
+            detail_cols = st.columns(2)
+            detail_cols[0].markdown(f"**案件ID**: {selected_row['id']}")
+            detail_cols[0].markdown(f"**ステータス**: {selected_row['ステータス']}")
+            detail_cols[0].markdown(f"**工種**: {selected_row['工種']}")
+            detail_cols[0].markdown(f"**元請区分**: {selected_row['元請区分']}")
+            detail_cols[1].markdown(f"**担当者**: {selected_row['担当者']}")
+            detail_cols[1].markdown(f"**得意先**: {selected_row['得意先']}")
+            detail_cols[1].markdown(f"**現場所在地**: {selected_row['現場所在地']}")
+            st.markdown("**期間**")
+            st.markdown(
+                f"着工日: {format_date(selected_row['着工日'])} / 竣工日: {format_date(selected_row['竣工日'])}"
+            )
+            st.markdown("**備考**")
+            st.write(selected_row.get("備考", "-"))
+            st.markdown("**リスクメモ**")
+            st.write(selected_row.get("リスクメモ", "-"))
+            st.caption("添付ファイルは案件詳細ページから確認・追加できます。")
+    else:
+        st.info("詳細を確認したい案件を一覧から選択してください。")
 
 
 def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
