@@ -2101,7 +2101,7 @@ def apply_brand_theme() -> None:
     BRAND_TEMPLATE.layout.plot_bgcolor = active_theme["chart_plot"]
     legend_layout = BRAND_TEMPLATE.layout.legend or go.layout.Legend()
     legend_layout.bgcolor = active_theme["legend_bg"]
-    legend_layout.font = go.layout.Font(color=active_theme["text_strong"])
+    legend_layout.font = go.layout.legend.Font(color=active_theme["text_strong"])
     BRAND_TEMPLATE.layout.legend = legend_layout
 
 
