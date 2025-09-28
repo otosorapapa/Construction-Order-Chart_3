@@ -1458,6 +1458,14 @@ def apply_brand_theme() -> None:
             margin: 0;
         }}
 
+        [data-testid="stRadio"] div[role="radiogroup"] > label:not(:has(div[aria-checked="true"])) > div:nth-of-type(2),
+        [data-testid="stRadio"] div[role="radiogroup"] > label:not(:has(div[aria-checked="true"])) > div:nth-of-type(2) *,
+        [data-testid="stRadio"] div[role="radiogroup"] > label:not(:has(div[aria-checked="true"])) div[data-testid="stMarkdownContainer"] {{
+            color: #3b4350 !important;
+        }}
+
+        [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) > div:nth-of-type(2),
+        [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) > div:nth-of-type(2) *,
         [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) div[data-testid="stMarkdownContainer"] p,
         [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) div[data-testid="stMarkdownContainer"] span {{
             color: var(--text-invert) !important;
