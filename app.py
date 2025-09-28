@@ -784,42 +784,100 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         return fig
 
     color_key = filters.color_key
-    color_map = generate_color_map(df[color_key], color_key, filters.bar_color)
+    if color_key in df.columns:
+        color_source = df[color_key]
+    else:
+        color_source = pd.Series(["未設定"] * len(df), index=df.index)
+    color_map = generate_color_map(color_source, color_key, filters.bar_color)
     legend_tracker: Dict[str, bool] = {}
+
+    def safe_float(value, default: float = 0.0) -> float:
+        if pd.isna(value):
+            return default
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
+    def safe_int(value, default: int = 0) -> int:
+        if pd.isna(value):
+            return default
+        try:
+            return int(float(value))
+        except (TypeError, ValueError):
+            return default
+
+    def safe_str(value, default: str = "-") -> str:
+        if value is None or pd.isna(value):
+            return default
+        if isinstance(value, str) and value.strip() == "":
+            return default
+        return str(value)
 
     fig = go.Figure()
     for _, row in df.iterrows():
-        planned_start = format_date(row.get("着工日"))
-        planned_end = format_date(row.get("竣工日"))
+        planned_start_dt = pd.to_datetime(row.get("着工日"), errors="coerce")
+        planned_end_dt = pd.to_datetime(row.get("竣工日"), errors="coerce")
+
+        if pd.isna(planned_start_dt) or pd.isna(planned_end_dt):
+            continue
+
+        duration_days = (planned_end_dt - planned_start_dt).days + 1
+        if duration_days <= 0:
+            continue
+
+        planned_start = format_date(planned_start_dt)
+        planned_end = format_date(planned_end_dt)
         actual_end = format_date(row.get("実際竣工日"))
+
+        progress = safe_float(row.get("進捗率"))
+        expected_progress = safe_float(row.get("想定進捗率"))
+        delay_days = safe_int(row.get("遅延日数"))
+        gross_profit = safe_int(row.get("粗利額"))
+        cost_ratio = safe_float(row.get("原価率"))
+        order_diff = safe_int(row.get("受注差異"))
+        budget_diff = safe_int(row.get("予算乖離額"))
+        completion_value = safe_int(row.get("完成工事高"))
+        actual_profit = safe_int(row.get("実行粗利"))
+        avg_people = safe_float(row.get("月平均必要人数"))
+
+        client = safe_str(row.get("得意先"))
+        category = safe_str(row.get("工種"))
+        status = safe_str(row.get("ステータス"))
+        manager = safe_str(row.get("担当者"))
+        partner = safe_str(row.get("協力会社"))
+        risk_level = safe_str(row.get("リスクレベル"), "低")
+        risk_comment = safe_str(row.get("リスクコメント"))
+        notes = safe_str(row.get("備考"))
         hover_text = (
             f"案件名: {row['案件名']}<br>期間: {planned_start}〜{planned_end}<br>"
-            f"得意先: {row['得意先']}<br>工種: {row['工種']}<br>ステータス: {row['ステータス']}<br>"
-            f"進捗率: {row['進捗率']:.1f}% (想定 {row['想定進捗率']:.1f}%)<br>"
-            f"遅延日数: {int(row['遅延日数'])}日 / 実竣工: {actual_end}<br>"
-            f"粗利額: {row['粗利額']:,}円 / 原価率: {row['原価率']:.1f}%<br>"
-            f"受注差異: {row['受注差異']:,}円 / 予算乖離: {row['予算乖離額']:,}円<br>"
-            f"完成工事高: {row['完成工事高']:,}円 / 実行粗利: {row['実行粗利']:,}円<br>"
-            f"担当者: {row['担当者']} / 協力会社: {row['協力会社']}<br>"
-            f"月平均必要人数: {row['月平均必要人数']:.1f}人<br>"
+            f"得意先: {client}<br>工種: {category}<br>ステータス: {status}<br>"
+            f"進捗率: {progress:.1f}% (想定 {expected_progress:.1f}%)<br>"
+            f"遅延日数: {delay_days}日 / 実竣工: {actual_end}<br>"
+            f"粗利額: {gross_profit:,}円 / 原価率: {cost_ratio:.1f}%<br>"
+            f"受注差異: {order_diff:,}円 / 予算乖離: {budget_diff:,}円<br>"
+            f"完成工事高: {completion_value:,}円 / 実行粗利: {actual_profit:,}円<br>"
+            f"担当者: {manager} / 協力会社: {partner}<br>"
+            f"月平均必要人数: {avg_people:.1f}人<br>"
             f"回収: {format_date(row.get('回収開始日'))}〜{format_date(row.get('回収終了日'))}<br>"
             f"支払: {format_date(row.get('支払開始日'))}〜{format_date(row.get('支払終了日'))}<br>"
-            f"リスク: {row['リスクレベル']} ({row['リスクコメント']})<br>備考: {row['備考']}"
+            f"リスク: {risk_level} ({risk_comment})<br>備考: {notes}"
         )
-        raw_value = row[color_key]
-        legend_value = str(raw_value) if pd.notna(raw_value) and raw_value != "" else "未設定"
+        raw_value = row.get(color_key, None)
+        has_raw_value = pd.notna(raw_value) and str(raw_value).strip() != ""
+        legend_value = str(raw_value) if has_raw_value else "未設定"
         showlegend = False
         if legend_value not in legend_tracker:
             legend_tracker[legend_value] = True
             showlegend = True
-        bar_color = color_map.get(raw_value, filters.bar_color)
-        risk_level = row.get("リスクレベル", "低")
+        color_lookup_key = raw_value if has_raw_value else "未設定"
+        bar_color = color_map.get(color_lookup_key, filters.bar_color)
         border_color = {"高": BRAND_COLORS["crimson"], "中": BRAND_COLORS["gold"]}.get(risk_level)
         fig.add_trace(
             go.Bar(
-                x=[(pd.to_datetime(row["竣工日"]) - pd.to_datetime(row["着工日"]) + pd.Timedelta(days=1)).days],
+                x=[duration_days],
                 y=[row["案件名"]],
-                base=pd.to_datetime(row["着工日"]),
+                base=planned_start_dt,
                 orientation="h",
                 marker=dict(
                     color=bar_color,
@@ -829,7 +887,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
                 name=legend_value,
                 legendgroup=legend_value,
                 showlegend=showlegend,
-                text=[f"{row['進捗率']:.0f}%"],
+                text=[f"{progress:.0f}%"],
                 texttemplate="%{text}",
                 textposition="inside",
                 textfont=dict(
@@ -842,7 +900,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         annotation_symbol = {"高": "⚠️", "中": "△"}.get(risk_level)
         if annotation_symbol:
             fig.add_annotation(
-                x=pd.to_datetime(row["竣工日"]) + pd.Timedelta(days=1),
+                x=planned_end_dt + pd.Timedelta(days=1),
                 y=row["案件名"],
                 text=annotation_symbol,
                 showarrow=False,
@@ -851,21 +909,23 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
 
     start, end = fiscal_range
     month_starts = pd.date_range(start, end, freq="MS")
+    tick_values = [pd.to_datetime(val) for val in month_starts]
     label_font = {"高": 14, "中": 12, "低": 10}
+    project_count = max(1, len(fig.data))
     fig.update_layout(
         barmode="stack",
         template=BRAND_TEMPLATE,
         plot_bgcolor="white",
         paper_bgcolor="white",
-        height=max(400, 40 * len(df) + 200),
+        height=max(400, 40 * project_count + 200),
         title=f"{filters.fiscal_year}年度 タイムライン",
         xaxis=dict(
             range=[pd.to_datetime(start), pd.to_datetime(end)],
             tickformat="%m/%d",
             showgrid=filters.show_grid,
             tickmode="array",
-            tickvals=month_starts,
-            ticktext=[d.strftime("%m") for d in month_starts],
+            tickvals=tick_values,
+            ticktext=[val.strftime("%m") for val in tick_values],
             gridcolor=BRAND_COLORS["cloud"],
             linecolor=BRAND_COLORS["cloud"],
             tickfont=dict(color=BRAND_COLORS["slate"]),
