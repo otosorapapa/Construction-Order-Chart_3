@@ -6,8 +6,10 @@
 
 Python 3.10 以降を想定しています。
 
+依存パッケージは `requirements.txt` にまとめています。
+
 ```bash
-pip install streamlit pandas numpy plotly python-dateutil
+pip install -r requirements.txt
 ```
 
 ## 起動方法
