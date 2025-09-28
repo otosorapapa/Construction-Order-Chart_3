@@ -57,6 +57,7 @@ BRAND_TEMPLATE = go.layout.Template(
             bgcolor="rgba(255,255,255,0.85)",
             bordercolor=BRAND_COLORS["cloud"],
             borderwidth=1,
+            font=dict(color=BRAND_COLORS["slate"], size=12),
         ),
         colorway=BRAND_COLORWAY,
     )
