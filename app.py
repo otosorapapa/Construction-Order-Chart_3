@@ -973,7 +973,61 @@ def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
         )
     )
 
+# Plotly
+# GEN: start
+def gen_time_marks(
+    tasks: pd.DataFrame, fallback_range: Tuple[date, date]
+) -> Tuple[List[pd.Timestamp], List[pd.Timestamp], Tuple[pd.Timestamp, pd.Timestamp], List[str]]:
+    fallback_start, fallback_end = fallback_range
+    start_ts = pd.Timestamp(fallback_start)
+    end_ts = pd.Timestamp(fallback_end)
 
+    if not tasks.empty:
+        start_series = pd.to_datetime(tasks.get("着工日"), errors="coerce")
+        end_series = pd.to_datetime(tasks.get("竣工日"), errors="coerce")
+
+        if start_series.notna().any():
+            start_ts = min(start_ts, start_series.dropna().min())
+        if end_series.notna().any():
+            end_ts = max(end_ts, end_series.dropna().max())
+
+    if start_ts > end_ts:
+        end_ts = start_ts
+
+    start_buffer = start_ts - pd.Timedelta(days=3)
+    end_buffer = end_ts + pd.Timedelta(days=3)
+
+    domain_start = pd.Timestamp(start_buffer.year, start_buffer.month, 1)
+    domain_end_month_start = pd.Timestamp(end_buffer.year, end_buffer.month, 1)
+    domain_end = (
+        domain_end_month_start + relativedelta(months=1) - pd.Timedelta(days=1)
+    )
+
+    months = pd.date_range(domain_start, domain_end, freq="MS")
+    major_marks: List[pd.Timestamp] = []
+    major_labels: List[str] = []
+    minor_marks: List[pd.Timestamp] = []
+
+    for month_start in months:
+        month_end = month_start + relativedelta(months=1) - pd.Timedelta(days=1)
+        major_marks.append(month_start)
+        major_labels.append(f"{month_start.month}月")
+
+        for day in [6, 12, 18, 24]:
+            candidate = month_start + pd.Timedelta(days=day - 1)
+            if candidate < domain_start or candidate > domain_end or candidate > month_end:
+                continue
+            minor_marks.append(candidate)
+
+        if month_end >= domain_start and month_end <= domain_end:
+            minor_marks.append(month_end)
+
+    minor_marks = sorted(dict.fromkeys(minor_marks))
+
+    return major_marks, minor_marks, (domain_start, domain_end), major_labels
+
+
+# GEN: end
 
 
 def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[date, date]) -> go.Figure:
@@ -1124,34 +1178,12 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
                 font=dict(size=16, color=border_color or BRAND_COLORS["slate"]),
             )
 
-    start, end = fiscal_range
-    start_ts = pd.to_datetime(start)
-    end_ts = pd.to_datetime(end)
-    month_starts = pd.date_range(start_ts, end_ts, freq="MS")
+    major_marks, minor_marks, (range_start, range_end), major_labels = gen_time_marks(
+        df, fiscal_range
+    )
+    theme = get_active_theme()
 
-    tick_candidates: List[pd.Timestamp] = []
-    for month_start in month_starts:
-        month_end = min(
-            end_ts,
-            month_start + relativedelta(months=1) - pd.Timedelta(days=1),
-        )
-
-        for offset in [0, 6, 12, 18, 24]:
-            candidate = month_start + pd.Timedelta(days=offset)
-            if candidate < start_ts or candidate > month_end or candidate > end_ts:
-                continue
-            tick_candidates.append(candidate)
-
-        if month_end >= start_ts:
-            tick_candidates.append(month_end)
-
-    tick_candidates.sort()
-    tick_values: List[pd.Timestamp] = []
-    seen: Set[pd.Timestamp] = set()
-    for candidate in tick_candidates:
-        if candidate not in seen:
-            seen.add(candidate)
-            tick_values.append(candidate)
+    range_max = range_end + pd.Timedelta(days=1)
     label_font = {"高": 14, "中": 12, "低": 10}
     project_count = max(1, len(fig.data))
     fig.update_layout(
@@ -1165,12 +1197,11 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             font=dict(color=BRAND_COLORS["slate"]),
         ),
         xaxis=dict(
-            range=[start_ts, end_ts],
-            tickformat="%m/%d",
+            range=[range_start, range_max],
             showgrid=filters.show_grid,
             tickmode="array",
-            tickvals=tick_values,
-            ticktext=[f"{val.month}/{val.day}" for val in tick_values],
+            tickvals=major_marks,
+            ticktext=major_labels,
             gridcolor=BRAND_COLORS["cloud"],
             linecolor=BRAND_COLORS["cloud"],
             tickfont=dict(color=BRAND_COLORS["slate"]),
@@ -1186,43 +1217,36 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         margin=dict(t=80, b=40, l=10, r=10, pad=10),
     )
 
-    if filters.show_grid:
-        for month_start in month_starts:
-            month_end = min(
-                end_ts,
-                month_start + relativedelta(months=1) - pd.Timedelta(days=1),
-            )
+    major_line_color = theme["chart_grid"]
+    minor_line_color = (
+        "rgba(255,255,255,0.28)" if theme.get("slug") == "dark" else "rgba(0,0,0,0.28)"
+    )
 
-            fig.add_vline(
-                x=month_start,
-                line_width=1,
-                line_dash="dash",
-                line_color=BRAND_COLORS["cloud"],
-                opacity=0.6,
-            )
+    major_mark_set = set(major_marks)
 
-            for offset in [6, 12, 18, 24]:
-                guide_date = month_start + pd.Timedelta(days=offset)
-                if guide_date < start_ts or guide_date > month_end or guide_date > end_ts:
-                    continue
-                fig.add_vline(
-                    x=guide_date,
-                    line_width=0.6,
-                    line_dash="dot",
-                    line_color=BRAND_COLORS["cloud"],
-                    opacity=0.35,
-                )
+    for mark in major_marks:
+        if mark < range_start or mark > range_end:
+            continue
+        fig.add_vline(
+            x=mark,
+            line_width=1.2,
+            line_color=major_line_color,
+            opacity=0.85,
+        )
 
-            if month_end >= start_ts:
-                fig.add_vline(
-                    x=month_end,
-                    line_width=1,
-                    line_dash="dash",
-                    line_color=BRAND_COLORS["cloud"],
-                    opacity=0.5,
-                )
+    for mark in minor_marks:
+        if mark < range_start or mark > range_end or mark in major_mark_set:
+            continue
+        fig.add_vline(
+            x=mark,
+            line_width=0.5,
+            line_dash="dot",
+            line_color=minor_line_color,
+            opacity=0.32,
+        )
+
     today = pd.Timestamp(date.today())
-    if start <= today.date() <= end:
+    if range_start <= today <= range_end:
         fig.add_vline(
             x=today,
             line_width=2,
