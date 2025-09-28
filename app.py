@@ -2401,8 +2401,13 @@ def get_brand_template() -> go.layout.Template:
     template.layout.paper_bgcolor = theme["chart_paper"]
     template.layout.plot_bgcolor = theme["chart_plot"]
 
-    legend_layout = template.layout.legend or go.layout.Legend()
-    legend_font = legend_layout.font or go.layout.legend.Font()
+    legend_layout = template.layout.legend
+    if legend_layout is None:
+        legend_layout = go.layout.Legend()
+
+    legend_font = legend_layout.font
+    if legend_font is None:
+        legend_font = go.layout.legend.Font()
     legend_layout.bgcolor = theme["legend_bg"]
     legend_font.color = theme["text_strong"]
     legend_layout.font = legend_font
