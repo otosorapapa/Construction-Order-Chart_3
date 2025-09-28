@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime
 from io import BytesIO
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -908,8 +908,33 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             )
 
     start, end = fiscal_range
-    month_starts = pd.date_range(start, end, freq="MS")
-    tick_values = [pd.to_datetime(val) for val in month_starts]
+    start_ts = pd.to_datetime(start)
+    end_ts = pd.to_datetime(end)
+    month_starts = pd.date_range(start_ts, end_ts, freq="MS")
+
+    tick_candidates: List[pd.Timestamp] = []
+    for month_start in month_starts:
+        month_end = min(
+            end_ts,
+            month_start + relativedelta(months=1) - pd.Timedelta(days=1),
+        )
+
+        for offset in [0, 6, 12, 18, 24]:
+            candidate = month_start + pd.Timedelta(days=offset)
+            if candidate < start_ts or candidate > month_end or candidate > end_ts:
+                continue
+            tick_candidates.append(candidate)
+
+        if month_end >= start_ts:
+            tick_candidates.append(month_end)
+
+    tick_candidates.sort()
+    tick_values: List[pd.Timestamp] = []
+    seen: Set[pd.Timestamp] = set()
+    for candidate in tick_candidates:
+        if candidate not in seen:
+            seen.add(candidate)
+            tick_values.append(candidate)
     label_font = {"高": 14, "中": 12, "低": 10}
     project_count = max(1, len(fig.data))
     fig.update_layout(
@@ -920,12 +945,12 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         height=max(400, 40 * project_count + 200),
         title=f"{filters.fiscal_year}年度 タイムライン",
         xaxis=dict(
-            range=[pd.to_datetime(start), pd.to_datetime(end)],
+            range=[start_ts, end_ts],
             tickformat="%m/%d",
             showgrid=filters.show_grid,
             tickmode="array",
             tickvals=tick_values,
-            ticktext=[val.strftime("%m") for val in tick_values],
+            ticktext=[f"{val.month}/{val.day}" for val in tick_values],
             gridcolor=BRAND_COLORS["cloud"],
             linecolor=BRAND_COLORS["cloud"],
             tickfont=dict(color=BRAND_COLORS["slate"]),
@@ -941,15 +966,41 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         margin=dict(t=80, b=40, l=10, r=10, pad=10),
     )
 
-    for month in range(12):
-        line_date = pd.to_datetime(start) + relativedelta(months=month)
-        fig.add_vline(
-            x=line_date,
-            line_width=1,
-            line_dash="dash",
-            line_color=BRAND_COLORS["cloud"],
-            opacity=0.6,
-        )
+    if filters.show_grid:
+        for month_start in month_starts:
+            month_end = min(
+                end_ts,
+                month_start + relativedelta(months=1) - pd.Timedelta(days=1),
+            )
+
+            fig.add_vline(
+                x=month_start,
+                line_width=1,
+                line_dash="dash",
+                line_color=BRAND_COLORS["cloud"],
+                opacity=0.6,
+            )
+
+            for offset in [6, 12, 18, 24]:
+                guide_date = month_start + pd.Timedelta(days=offset)
+                if guide_date < start_ts or guide_date > month_end or guide_date > end_ts:
+                    continue
+                fig.add_vline(
+                    x=guide_date,
+                    line_width=0.6,
+                    line_dash="dot",
+                    line_color=BRAND_COLORS["cloud"],
+                    opacity=0.35,
+                )
+
+            if month_end >= start_ts:
+                fig.add_vline(
+                    x=month_end,
+                    line_width=1,
+                    line_dash="dash",
+                    line_color=BRAND_COLORS["cloud"],
+                    opacity=0.5,
+                )
     today = pd.Timestamp(date.today())
     if start <= today.date() <= end:
         fig.add_vline(
