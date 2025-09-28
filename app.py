@@ -2137,7 +2137,7 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
 
 def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
     st.subheader("集計 / 分析")
-    enriched = enrich_projects(df) if not df.empty else df
+    enriched = enrich_projects(df)
 
     total_revenue = enriched["受注金額"].sum()
     gross_profit = enriched["粗利額"].sum()
