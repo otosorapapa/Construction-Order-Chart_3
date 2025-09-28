@@ -1,0 +1,22 @@
+{
+  "clients": [
+    "金子技建",
+    "佐藤組",
+    "新宮開発",
+    "高野組"
+  ],
+  "categories": [
+    "建築",
+    "土木",
+    "型枠",
+    "その他"
+  ],
+  "managers": [
+    "山中",
+    "近藤",
+    "田中"
+  ],
+  "holidays": [],
+  "currency_format": "#,###",
+  "decimal_places": 0
+}
