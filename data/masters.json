@@ -1,22 +1,23 @@
 {
   "clients": [
-    "金子技建",
-    "佐藤組",
-    "新宮開発",
-    "高野組"
+    {"name": "金子技建", "active": true},
+    {"name": "佐藤組", "active": true},
+    {"name": "新宮開発", "active": true},
+    {"name": "高野組", "active": true}
   ],
   "categories": [
-    "建築",
-    "土木",
-    "型枠",
-    "その他"
+    {"name": "建築", "active": true},
+    {"name": "土木", "active": true},
+    {"name": "型枠", "active": true},
+    {"name": "その他", "active": true}
   ],
   "managers": [
-    "山中",
-    "近藤",
-    "田中"
+    {"name": "山中", "active": true},
+    {"name": "近藤", "active": true},
+    {"name": "田中", "active": true}
   ],
   "holidays": [],
   "currency_format": "#,###",
-  "decimal_places": 0
+  "decimal_places": 0,
+  "history": []
 }
