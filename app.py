@@ -617,6 +617,21 @@ def determine_risk_level(row: pd.Series) -> Tuple[str, str]:
 
 def enrich_projects(df: pd.DataFrame) -> pd.DataFrame:
     enriched = df.copy()
+    numeric_defaults = {
+        "受注金額": 0.0,
+        "予定原価": 0.0,
+        "受注予定額": 0.0,
+        "予算原価": 0.0,
+        "進捗率": 0.0,
+        "実績原価": 0.0,
+    }
+    for column, default in numeric_defaults.items():
+        if column not in enriched.columns:
+            enriched[column] = default
+    if "実際竣工日" not in enriched.columns:
+        enriched["実際竣工日"] = pd.NaT
+    if "竣工日" not in enriched.columns:
+        enriched["竣工日"] = pd.NaT
     enriched["粗利額"] = enriched["受注金額"] - enriched["予定原価"]
     with np.errstate(divide="ignore", invalid="ignore"):
         enriched["原価率"] = np.where(
