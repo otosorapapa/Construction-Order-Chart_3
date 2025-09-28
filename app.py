@@ -1086,7 +1086,7 @@ def create_timeline(
                 titlefont=dict(color=BRAND_COLORS["slate"]),
                 gridcolor="rgba(0,0,0,0)",
             ),
-            template=BRAND_TEMPLATE,
+            template=get_brand_template(),
             height=500,
             plot_bgcolor="white",
             paper_bgcolor="white",
@@ -1231,7 +1231,7 @@ def create_timeline(
     project_count = max(1, len(fig.data))
     fig.update_layout(
         barmode="stack",
-        template=BRAND_TEMPLATE,
+        template=get_brand_template(),
         plot_bgcolor="white",
         paper_bgcolor="white",
         height=max(400, 40 * project_count + 200),
@@ -1321,7 +1321,7 @@ def create_schedule_chart(
     if df.empty:
         fig = go.Figure()
         fig.update_layout(
-            template=BRAND_TEMPLATE,
+            template=get_brand_template(),
             plot_bgcolor="white",
             paper_bgcolor="white",
             height=400,
@@ -1419,7 +1419,7 @@ def create_schedule_chart(
     project_count = max(1, len(project_labels))
 
     fig.update_layout(
-        template=BRAND_TEMPLATE,
+        template=get_brand_template(),
         plot_bgcolor="white",
         paper_bgcolor="white",
         barmode="overlay",
@@ -2389,13 +2389,22 @@ def apply_brand_theme() -> None:
         unsafe_allow_html=True,
     )
 
-    BRAND_TEMPLATE.layout.font.color = active_theme["text_strong"]
-    BRAND_TEMPLATE.layout.paper_bgcolor = active_theme["chart_paper"]
-    BRAND_TEMPLATE.layout.plot_bgcolor = active_theme["chart_plot"]
-    legend_layout = BRAND_TEMPLATE.layout.legend or go.layout.Legend()
-    legend_layout.bgcolor = active_theme["legend_bg"]
-    legend_layout.font = go.layout.legend.Font(color=active_theme["text_strong"])
-    BRAND_TEMPLATE.layout.legend = legend_layout
+def get_brand_template() -> go.layout.Template:
+    template = go.layout.Template(BRAND_TEMPLATE)
+    theme = get_active_theme()
+
+    template.layout.font.color = theme["text_strong"]
+    template.layout.paper_bgcolor = theme["chart_paper"]
+    template.layout.plot_bgcolor = theme["chart_plot"]
+
+    legend_layout = template.layout.legend or go.layout.Legend()
+    legend_font = legend_layout.font or go.layout.legend.Font()
+    legend_layout.bgcolor = theme["legend_bg"]
+    legend_font.color = theme["text_strong"]
+    legend_layout.font = legend_font
+    template.layout.legend = legend_layout
+
+    return template
 
 
 def apply_plotly_theme(fig: go.Figure) -> go.Figure:
@@ -3007,7 +3016,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         )
     )
     trend_fig.update_layout(
-        template=BRAND_TEMPLATE,
+        template=get_brand_template(),
         barmode="group",
         plot_bgcolor="white",
         paper_bgcolor="white",
@@ -3065,7 +3074,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         )
     )
     cash_fig.update_layout(
-        template=BRAND_TEMPLATE,
+        template=get_brand_template(),
         barmode="relative",
         plot_bgcolor="white",
         paper_bgcolor="white",
@@ -3115,7 +3124,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             )
             pie1.update_layout(
                 title="工種別構成比",
-                template=BRAND_TEMPLATE,
+                template=get_brand_template(),
                 showlegend=False,
             )
             pie1 = apply_plotly_theme(pie1)
@@ -3137,7 +3146,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             )
             pie2.update_layout(
                 title="得意先別構成比",
-                template=BRAND_TEMPLATE,
+                template=get_brand_template(),
                 showlegend=False,
             )
             pie2 = apply_plotly_theme(pie2)
@@ -3157,7 +3166,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         )
         hist.update_layout(
             title="粗利率ヒストグラム",
-            template=BRAND_TEMPLATE,
+            template=get_brand_template(),
             bargap=0.1,
             plot_bgcolor="white",
             paper_bgcolor="white",
