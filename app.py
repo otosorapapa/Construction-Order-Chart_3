@@ -18,50 +18,388 @@ FISCAL_START_MONTH = 7
 DEFAULT_FISCAL_YEAR = 2025
 FISCAL_YEAR_OPTIONS = list(range(2024, 2029))
 
-BRAND_COLORS = {
-    "navy": "#0B1F3A",
-    "slate": "#2F3C48",
-    "mist": "#F4F6FA",
-    "cloud": "#E8ECF3",
-    "gold": "#C9A227",
-    "sky": "#4D7EA8",
-    "teal": "#6AA5A9",
-    "crimson": "#B03038",
+THEME_PRESETS = {
+    "light": {
+        "label": "ライト",
+        "icon": "🌞",
+        "palette": {
+            "navy": "#0B1F3A",
+            "sky": "#007ACC",
+            "teal": "#6AA5A9",
+            "gold": "#C9A227",
+            "crimson": "#B03038",
+            "slate": "#2F3C48",
+            "mist": "#F4F6FA",
+            "cloud": "#E8ECF3",
+            "surface_bg": "#F7F9FC",
+            "surface_panel": "#E7EEF8",
+            "surface_card": "#FFFFFF",
+            "surface_elevated": "#FDFEFE",
+            "surface_outline": "#D5DEEB",
+            "surface_outline_strong": "#9AA8C2",
+            "text_primary": "#2F3C48",
+            "text_secondary": "#5B6C82",
+            "text_interactive": "#007ACC",
+            "text_error": "#B03038",
+            "text_disabled": "#A7B4C8",
+            "text_invert": "#FFFFFF",
+            "accent_green": "#2F9E5B",
+            "success": "#2F9E5B",
+            "warning": "#C9A227",
+            "danger": "#B03038",
+            "info": "#4D7EA8",
+            "shadow_strong": "rgba(11, 31, 58, 0.22)",
+            "shadow_soft": "rgba(11, 31, 58, 0.1)",
+            "kpi_border": "rgba(12, 31, 58, 0.18)",
+            "danger_shadow": "rgba(176, 48, 56, 0.25)",
+            "info_shadow": "rgba(77, 126, 168, 0.18)",
+            "quick_action_shadow": "rgba(30, 76, 156, 0.18)",
+            "kpi_gradient_start": "rgba(30, 76, 156, 0.95)",
+            "kpi_gradient_end": "rgba(11, 31, 58, 0.95)",
+            "kpi_icon_bg": "rgba(255, 255, 255, 0.18)",
+            "kpi_icon_color": "#DCE7F8",
+            "kpi_title": "rgba(255, 255, 255, 0.78)",
+            "kpi_subtitle": "rgba(255, 255, 255, 0.7)",
+            "control_gradient_start": "rgba(255, 255, 255, 0.92)",
+            "control_gradient_end": "rgba(231, 238, 248, 0.88)",
+            "control_border": "#D5DEEB",
+            "control_shadow": "rgba(11, 31, 58, 0.14)",
+            "interactive_primary_start": "#4D7EA8",
+            "interactive_primary_end": "#0B1F3A",
+            "interactive_primary_hover_start": "#4D86C0",
+            "interactive_primary_hover_end": "#10274D",
+            "interactive_soft_bg": "rgba(30, 76, 156, 0.12)",
+            "interactive_soft_border": "rgba(30, 76, 156, 0.3)",
+            "interactive_soft_text": "#0B1F3A",
+            "table_row_odd": "rgba(239, 244, 252, 0.85)",
+            "table_row_even": "rgba(255, 255, 255, 0.95)",
+            "table_hover": "rgba(77, 126, 168, 0.16)",
+            "badge_neutral_bg": "rgba(30, 76, 156, 0.12)",
+            "badge_neutral_text": "#0B1F3A",
+            "badge_info_bg": "rgba(77, 126, 168, 0.18)",
+            "badge_info_text": "#4D7EA8",
+            "badge_success_bg": "rgba(47, 158, 91, 0.15)",
+            "badge_success_text": "#2F9E5B",
+            "badge_warn_bg": "rgba(201, 162, 39, 0.18)",
+            "badge_warn_text": "#C9A227",
+            "badge_alert_bg": "rgba(176, 48, 56, 0.15)",
+            "badge_alert_text": "#B03038",
+            "legend_bg": "rgba(255,255,255,0.85)",
+            "legend_border": "#D5DEEB",
+            "plot_bg": "#FFFFFF",
+            "plot_paper": "#FFFFFF",
+            "plot_grid": "#E1E6EF",
+            "plot_zero": "#E1E6EF",
+            "plot_font": "#2F3C48",
+            "plot_axis": "#5B6C82",
+            "bar_default": "#0B1F3A",
+            "timeline_complete": "#4D7EA8",
+            "timeline_progress": "#6AA5A9",
+            "timeline_delay": "#B03038",
+        },
+        "chart": {
+            "colorway": ["#0B1F3A", "#4D7EA8", "#8FAACF", "#6AA5A9", "#C9A227", "#7B8C9E"],
+        },
+    },
+    "dark": {
+        "label": "ダーク",
+        "icon": "🌙",
+        "palette": {
+            "navy": "#7EA9FF",
+            "sky": "#4A90E2",
+            "teal": "#5DD0C4",
+            "gold": "#F5C463",
+            "crimson": "#FF6B6B",
+            "slate": "#E0E6F6",
+            "mist": "#1E222C",
+            "cloud": "#3A3F4B",
+            "surface_bg": "#1C1F26",
+            "surface_panel": "#232834",
+            "surface_card": "#262B38",
+            "surface_elevated": "#2B3040",
+            "surface_outline": "#343B48",
+            "surface_outline_strong": "#505A6D",
+            "text_primary": "#E8ECF8",
+            "text_secondary": "#B3BCD0",
+            "text_interactive": "#7EA9FF",
+            "text_error": "#FF6B6B",
+            "text_disabled": "#6E788C",
+            "text_invert": "#0E1118",
+            "accent_green": "#52D273",
+            "success": "#52D273",
+            "warning": "#F5C463",
+            "danger": "#FF6B6B",
+            "info": "#4A90E2",
+            "shadow_strong": "rgba(0, 0, 0, 0.55)",
+            "shadow_soft": "rgba(0, 0, 0, 0.35)",
+            "kpi_border": "rgba(126, 169, 255, 0.35)",
+            "danger_shadow": "rgba(255, 107, 107, 0.32)",
+            "info_shadow": "rgba(74, 144, 226, 0.32)",
+            "quick_action_shadow": "rgba(126, 169, 255, 0.28)",
+            "kpi_gradient_start": "rgba(31, 59, 104, 0.92)",
+            "kpi_gradient_end": "rgba(17, 26, 43, 0.96)",
+            "kpi_icon_bg": "rgba(126, 169, 255, 0.18)",
+            "kpi_icon_color": "#F4F6FF",
+            "kpi_title": "rgba(226, 233, 255, 0.85)",
+            "kpi_subtitle": "rgba(222, 230, 255, 0.72)",
+            "control_gradient_start": "rgba(40, 47, 63, 0.96)",
+            "control_gradient_end": "rgba(28, 32, 44, 0.94)",
+            "control_border": "#343B48",
+            "control_shadow": "rgba(0, 0, 0, 0.35)",
+            "interactive_primary_start": "#4A90E2",
+            "interactive_primary_end": "#1E3254",
+            "interactive_primary_hover_start": "#5BA0F0",
+            "interactive_primary_hover_end": "#244067",
+            "interactive_soft_bg": "rgba(126, 169, 255, 0.18)",
+            "interactive_soft_border": "rgba(126, 169, 255, 0.35)",
+            "interactive_soft_text": "#E8ECF8",
+            "table_row_odd": "rgba(39, 46, 63, 0.85)",
+            "table_row_even": "rgba(34, 40, 56, 0.92)",
+            "table_hover": "rgba(74, 144, 226, 0.28)",
+            "badge_neutral_bg": "rgba(126, 169, 255, 0.18)",
+            "badge_neutral_text": "#E8ECF8",
+            "badge_info_bg": "rgba(74, 144, 226, 0.28)",
+            "badge_info_text": "#BED8FF",
+            "badge_success_bg": "rgba(82, 210, 115, 0.2)",
+            "badge_success_text": "#52D273",
+            "badge_warn_bg": "rgba(245, 196, 99, 0.24)",
+            "badge_warn_text": "#F5C463",
+            "badge_alert_bg": "rgba(255, 107, 107, 0.24)",
+            "badge_alert_text": "#FF6B6B",
+            "legend_bg": "rgba(28,32,44,0.85)",
+            "legend_border": "#343B48",
+            "plot_bg": "#1E1F29",
+            "plot_paper": "#1B1D26",
+            "plot_grid": "#2F3644",
+            "plot_zero": "#3A4252",
+            "plot_font": "#E8ECF8",
+            "plot_axis": "#B3BCD0",
+            "bar_default": "#4A90E2",
+            "timeline_complete": "#4A90E2",
+            "timeline_progress": "#5DD0C4",
+            "timeline_delay": "#FF6B6B",
+        },
+        "chart": {
+            "colorway": ["#4A90E2", "#7EA9FF", "#F5C463", "#5DD0C4", "#A977FF", "#56CFE1"],
+        },
+    },
+    "sepia": {
+        "label": "セピア",
+        "icon": "🍂",
+        "palette": {
+            "navy": "#5B4636",
+            "sky": "#4B6A84",
+            "teal": "#6F8B5F",
+            "gold": "#C58B47",
+            "crimson": "#8A4B32",
+            "slate": "#5B4636",
+            "mist": "#F5F0E6",
+            "cloud": "#E4D6C2",
+            "surface_bg": "#F3E9DB",
+            "surface_panel": "#EFE1CE",
+            "surface_card": "#FBF3E6",
+            "surface_elevated": "#F7E8D5",
+            "surface_outline": "#D9C4A4",
+            "surface_outline_strong": "#A48B6B",
+            "text_primary": "#4A3827",
+            "text_secondary": "#6B5642",
+            "text_interactive": "#8A4B32",
+            "text_error": "#B5563F",
+            "text_disabled": "#B6A999",
+            "text_invert": "#FBF3E6",
+            "accent_green": "#6F8B5F",
+            "success": "#6F8B5F",
+            "warning": "#C58B47",
+            "danger": "#B5563F",
+            "info": "#4B6A84",
+            "shadow_strong": "rgba(91, 70, 54, 0.24)",
+            "shadow_soft": "rgba(91, 70, 54, 0.16)",
+            "kpi_border": "rgba(90, 68, 52, 0.28)",
+            "danger_shadow": "rgba(138, 75, 50, 0.28)",
+            "info_shadow": "rgba(75, 106, 132, 0.24)",
+            "quick_action_shadow": "rgba(197, 139, 71, 0.24)",
+            "kpi_gradient_start": "rgba(178, 111, 62, 0.92)",
+            "kpi_gradient_end": "rgba(91, 70, 54, 0.95)",
+            "kpi_icon_bg": "rgba(255, 245, 232, 0.22)",
+            "kpi_icon_color": "#FDF4E6",
+            "kpi_title": "rgba(255, 249, 240, 0.82)",
+            "kpi_subtitle": "rgba(253, 241, 225, 0.72)",
+            "control_gradient_start": "rgba(255, 249, 240, 0.94)",
+            "control_gradient_end": "rgba(242, 226, 200, 0.9)",
+            "control_border": "#D9C4A4",
+            "control_shadow": "rgba(138, 92, 51, 0.18)",
+            "interactive_primary_start": "#C58B47",
+            "interactive_primary_end": "#8A4B32",
+            "interactive_primary_hover_start": "#D59A55",
+            "interactive_primary_hover_end": "#753F29",
+            "interactive_soft_bg": "rgba(197, 139, 71, 0.18)",
+            "interactive_soft_border": "rgba(138, 75, 50, 0.35)",
+            "interactive_soft_text": "#5B4636",
+            "table_row_odd": "rgba(250, 240, 224, 0.9)",
+            "table_row_even": "rgba(254, 247, 236, 0.96)",
+            "table_hover": "rgba(197, 139, 71, 0.22)",
+            "badge_neutral_bg": "rgba(197, 139, 71, 0.18)",
+            "badge_neutral_text": "#5B4636",
+            "badge_info_bg": "rgba(75, 106, 132, 0.22)",
+            "badge_info_text": "#4B6A84",
+            "badge_success_bg": "rgba(111, 139, 95, 0.2)",
+            "badge_success_text": "#46633A",
+            "badge_warn_bg": "rgba(197, 139, 71, 0.22)",
+            "badge_warn_text": "#8A5B2E",
+            "badge_alert_bg": "rgba(138, 75, 50, 0.22)",
+            "badge_alert_text": "#8A4B32",
+            "legend_bg": "rgba(253, 246, 235, 0.9)",
+            "legend_border": "#D9C4A4",
+            "plot_bg": "#FBF3E6",
+            "plot_paper": "#F7E8D5",
+            "plot_grid": "#E2D3C1",
+            "plot_zero": "#CCB79C",
+            "plot_font": "#4A3827",
+            "plot_axis": "#6B5642",
+            "bar_default": "#8A4B32",
+            "timeline_complete": "#C58B47",
+            "timeline_progress": "#6F8B5F",
+            "timeline_delay": "#B5563F",
+        },
+        "chart": {
+            "colorway": ["#8A4B32", "#C58B47", "#6F8B5F", "#4B6A84", "#B2723C", "#7D5A3A"],
+        },
+    },
 }
 
-BRAND_COLORWAY = [
-    BRAND_COLORS["navy"],
-    BRAND_COLORS["sky"],
-    "#8FAACF",
-    BRAND_COLORS["teal"],
-    BRAND_COLORS["gold"],
-    "#7B8C9E",
-]
+DEFAULT_THEME = "light"
+THEME_ORDER = list(THEME_PRESETS.keys())
 
-BRAND_TEMPLATE = go.layout.Template(
-    layout=dict(
-        font=dict(
-            family="'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif",
-            color=BRAND_COLORS["slate"],
-        ),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        hoverlabel=dict(font=dict(family="'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif")),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            bgcolor="rgba(255,255,255,0.85)",
-            bordercolor=BRAND_COLORS["cloud"],
-            borderwidth=1,
-        ),
-        colorway=BRAND_COLORWAY,
+
+def get_active_theme_id() -> str:
+    theme_id = st.session_state.get("active_theme", DEFAULT_THEME)
+    if theme_id not in THEME_PRESETS:
+        theme_id = DEFAULT_THEME
+    return theme_id
+
+
+def get_theme_config(theme_id: Optional[str] = None) -> Dict:
+    target = theme_id or get_active_theme_id()
+    return THEME_PRESETS.get(target, THEME_PRESETS[DEFAULT_THEME])
+
+
+def theme_palette() -> Dict[str, str]:
+    return get_theme_config()["palette"]
+
+
+def theme_chart_settings() -> Dict[str, object]:
+    config = get_theme_config()
+    palette = config["palette"]
+    chart = dict(config["chart"])
+    chart.setdefault("plot_bg", palette["plot_bg"])
+    chart.setdefault("plot_paper", palette["plot_paper"])
+    chart.setdefault("grid", palette["plot_grid"])
+    chart.setdefault("zeroline", palette["plot_zero"])
+    chart.setdefault("font", palette["plot_font"])
+    chart.setdefault("axis", palette["plot_axis"])
+    chart.setdefault("legend_bg", palette["legend_bg"])
+    chart.setdefault("legend_border", palette["legend_border"])
+    chart.setdefault("bar_default", palette["bar_default"])
+    return chart
+
+
+def get_theme_color(key: str, fallback: Optional[str] = None) -> str:
+    palette = theme_palette()
+    if key in palette:
+        return palette[key]
+    if fallback is not None:
+        return fallback
+    return palette.get("navy", "#0B1F3A")
+
+
+def get_theme_colorway() -> List[str]:
+    chart = theme_chart_settings()
+    colorway = chart.get("colorway", [])
+    return colorway or [
+        get_theme_color("navy"),
+        get_theme_color("sky"),
+        get_theme_color("teal"),
+        get_theme_color("gold"),
+        get_theme_color("crimson"),
+    ]
+
+
+def get_default_bar_color() -> str:
+    return theme_chart_settings().get("bar_default", get_theme_color("navy"))
+
+
+def build_plotly_template() -> go.layout.Template:
+    palette = theme_palette()
+    chart = theme_chart_settings()
+    return go.layout.Template(
+        layout=dict(
+            font=dict(
+                family="'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif",
+                color=chart.get("font", palette["text_primary"]),
+            ),
+            plot_bgcolor=chart.get("plot_bg", palette["plot_bg"]),
+            paper_bgcolor=chart.get("plot_paper", palette["plot_paper"]),
+            hoverlabel=dict(
+                font=dict(
+                    family="'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif",
+                    color=palette["text_primary"],
+                ),
+                bgcolor=palette["surface_card"],
+                bordercolor=palette["surface_outline"],
+            ),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1,
+                bgcolor=chart.get("legend_bg", palette["legend_bg"]),
+                bordercolor=chart.get("legend_border", palette["surface_outline"]),
+                borderwidth=1,
+                font=dict(color=chart.get("font", palette["text_primary"])),
+            ),
+            colorway=get_theme_colorway(),
+        )
     )
-)
 
-DEFAULT_BAR_COLOR = BRAND_COLORS["navy"]
+
+def apply_theme_context(theme_id: str) -> None:
+    st.session_state["active_theme"] = theme_id
+    st.session_state["theme_palette"] = theme_palette()
+    st.session_state["theme_chart"] = theme_chart_settings()
+
+
+def initialize_theme() -> None:
+    params = st.experimental_get_query_params()
+    theme_param = params.get("theme", [None])[0]
+    if theme_param in THEME_PRESETS:
+        st.session_state["active_theme"] = theme_param
+    elif "active_theme" not in st.session_state:
+        st.session_state["active_theme"] = DEFAULT_THEME
+    theme_id = get_active_theme_id()
+    # Persist theme to query params for bookmarking
+    params["theme"] = theme_id
+    st.experimental_set_query_params(**params)
+    apply_theme_context(theme_id)
+
+
+def set_active_theme(theme_id: str) -> None:
+    if theme_id not in THEME_PRESETS:
+        return
+    st.session_state["active_theme"] = theme_id
+    params = st.experimental_get_query_params()
+    params["theme"] = theme_id
+    st.experimental_set_query_params(**params)
+    apply_theme_context(theme_id)
+    st.session_state["theme_updated_at"] = datetime.now().isoformat()
+
+
+def cycle_theme() -> None:
+    current = get_active_theme_id()
+    order_index = THEME_ORDER.index(current)
+    next_theme = THEME_ORDER[(order_index + 1) % len(THEME_ORDER)]
+    set_active_theme(next_theme)
+    st.experimental_rerun()
 
 PROJECT_NUMERIC_COLUMNS = [
     "受注予定額",
@@ -474,30 +812,33 @@ def apply_filters(df: pd.DataFrame, filters: FilterState) -> pd.DataFrame:
 
 
 def generate_color_map(values: pd.Series, key: str, default_color: str) -> Dict[str, str]:
+    colors = theme_palette()
+    colorway = get_theme_colorway()
+    extended = colorway + [
+        colors.get("success"),
+        colors.get("warning"),
+        colors.get("info"),
+        colors.get("teal"),
+    ]
     palettes = {
-        "ステータス": [
-            BRAND_COLORS["navy"],
-            BRAND_COLORS["sky"],
-            "#8FAACF",
-            BRAND_COLORS["teal"],
-            BRAND_COLORS["gold"],
-            "#7B8C9E",
-        ],
+        "ステータス": extended,
         "工種": [
-            BRAND_COLORS["navy"],
-            BRAND_COLORS["gold"],
-            BRAND_COLORS["sky"],
-            BRAND_COLORS["teal"],
-            "#9AA8BC",
+            colors.get("navy"),
+            colors.get("gold"),
+            colors.get("sky"),
+            colors.get("teal"),
+            colors.get("accent_green"),
         ],
         "元請区分": [
-            BRAND_COLORS["navy"],
-            BRAND_COLORS["sky"],
-            BRAND_COLORS["gold"],
-            BRAND_COLORS["teal"],
+            colors.get("navy"),
+            colors.get("sky"),
+            colors.get("gold"),
+            colors.get("teal"),
         ],
     }
-    palette = palettes.get(key, [default_color])
+    palette = [c for c in palettes.get(key, [default_color]) if c]
+    if not palette:
+        palette = [default_color]
     unique_vals = [v for v in values.dropna().unique().tolist() if v != ""]
     color_map = {val: palette[i % len(palette)] for i, val in enumerate(unique_vals)}
     color_map["未設定"] = default_color
@@ -631,21 +972,30 @@ def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
     if df.empty:
         return df.style
 
+    palette = theme_palette()
+    danger = palette.get("danger", "#B03038")
+    warn = palette.get("warning", "#C9A227")
+    header_bg = palette.get("navy", "#1e3a6f")
+    header_text = palette.get("text_invert", "#ffffff")
+    alt_row = palette.get("surface_panel", "#eef3fb")
+    even_row = palette.get("surface_card", "#ffffff")
+    header_border = palette.get("surface_outline", "#d5deeb")
+
     def highlight(row: pd.Series) -> List[str]:
         styles: List[str] = []
         for col in row.index:
             style = ""
             if col == "リスクレベル":
                 if row[col] == "高":
-                    style = "color: #B03038; font-weight: 600;"
+                    style = f"color: {danger}; font-weight: 600;"
                 elif row[col] == "中":
-                    style = "color: #C9A227; font-weight: 600;"
+                    style = f"color: {warn}; font-weight: 600;"
             if col == "遅延日数" and row[col] > 0:
-                style = "color: #B03038; font-weight: 600;"
+                style = f"color: {danger}; font-weight: 600;"
             if col == "進捗差異" and row[col] < -10:
-                style = "color: #B03038; font-weight: 600;"
+                style = f"color: {danger}; font-weight: 600;"
             if col == "予算乖離額" and row[col] > 0:
-                style = "color: #B03038; font-weight: 600;"
+                style = f"color: {danger}; font-weight: 600;"
             styles.append(style)
         return styles
 
@@ -663,22 +1013,22 @@ def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
                 {
                     "selector": "th",
                     "props": [
-                        ("background-color", "#1e3a6f"),
-                        ("color", "#ffffff"),
+                        ("background-color", header_bg),
+                        ("color", header_text),
                         ("font-weight", "600"),
-                        ("border-bottom", "1px solid #d5deeb"),
+                        ("border-bottom", f"1px solid {header_border}"),
                     ],
                 },
                 {
                     "selector": "tbody tr:nth-child(odd)",
                     "props": [
-                        ("background-color", "#eef3fb"),
+                        ("background-color", alt_row),
                     ],
                 },
                 {
                     "selector": "tbody tr:nth-child(even)",
                     "props": [
-                        ("background-color", "#ffffff"),
+                        ("background-color", even_row),
                     ],
                 }
             ]
@@ -689,20 +1039,28 @@ def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
 
 
 def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[date, date]) -> go.Figure:
+    palette = theme_palette()
+    chart = theme_chart_settings()
+    template = build_plotly_template()
+    border_fallback = palette.get("surface_outline", "#cccccc")
+    grid_color = chart.get("grid", palette.get("surface_outline", "#d5deeb"))
+    today_color = palette.get("danger", palette.get("crimson", "#B03038"))
+    color_key = filters.color_key
+    default_bar_color = filters.bar_color or get_default_bar_color()
+    color_map = generate_color_map(df[color_key], color_key, default_bar_color)
+
     if df.empty:
         fig = go.Figure()
         fig.update_layout(
             xaxis_title="期間",
             yaxis_title="案件名",
-            template=BRAND_TEMPLATE,
+            template=template,
             height=500,
-            plot_bgcolor="white",
-            paper_bgcolor="white",
+            plot_bgcolor=chart.get("plot_bg"),
+            paper_bgcolor=chart.get("plot_paper"),
         )
         return fig
 
-    color_key = filters.color_key
-    color_map = generate_color_map(df[color_key], color_key, filters.bar_color)
     legend_tracker: Dict[str, bool] = {}
 
     fig = go.Figure()
@@ -730,9 +1088,9 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         if legend_value not in legend_tracker:
             legend_tracker[legend_value] = True
             showlegend = True
-        bar_color = color_map.get(raw_value, filters.bar_color)
+        bar_color = color_map.get(raw_value, default_bar_color)
         risk_level = row.get("リスクレベル", "低")
-        border_color = {"高": BRAND_COLORS["crimson"], "中": BRAND_COLORS["gold"]}.get(risk_level)
+        border_color = {"高": palette.get("danger"), "中": palette.get("warning")}.get(risk_level)
         fig.add_trace(
             go.Bar(
                 x=[(pd.to_datetime(row["竣工日"]) - pd.to_datetime(row["着工日"]) + pd.Timedelta(days=1)).days],
@@ -759,7 +1117,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
                 y=row["案件名"],
                 text=annotation_symbol,
                 showarrow=False,
-                font=dict(size=16, color=border_color or BRAND_COLORS["slate"]),
+                font=dict(size=16, color=border_color or palette.get("text_primary")),
             )
 
     start, end = fiscal_range
@@ -767,9 +1125,9 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
     label_font = {"高": 14, "中": 12, "低": 10}
     fig.update_layout(
         barmode="stack",
-        template=BRAND_TEMPLATE,
-        plot_bgcolor="white",
-        paper_bgcolor="white",
+        template=template,
+        plot_bgcolor=chart.get("plot_bg"),
+        paper_bgcolor=chart.get("plot_paper"),
         height=max(400, 40 * len(df) + 200),
         title=f"{filters.fiscal_year}年度 タイムライン",
         xaxis=dict(
@@ -779,8 +1137,8 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             tickmode="array",
             tickvals=month_starts,
             ticktext=[d.strftime("%m") for d in month_starts],
-            gridcolor=BRAND_COLORS["cloud"],
-            linecolor=BRAND_COLORS["cloud"],
+            gridcolor=grid_color,
+            linecolor=grid_color,
         ),
         yaxis=dict(
             autorange="reversed",
@@ -796,7 +1154,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             x=line_date,
             line_width=1,
             line_dash="dash",
-            line_color=BRAND_COLORS["cloud"],
+            line_color=border_fallback,
             opacity=0.6,
         )
     today = pd.Timestamp(date.today())
@@ -804,7 +1162,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         fig.add_vline(
             x=today,
             line_width=2,
-            line_color=BRAND_COLORS["crimson"],
+            line_color=today_color,
         )
         fig.add_annotation(
             x=today,
@@ -815,12 +1173,13 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             showarrow=False,
             xanchor="left",
             yanchor="bottom",
-            font=dict(color=BRAND_COLORS["crimson"]),
+            font=dict(color=today_color),
             bgcolor="rgba(255, 255, 255, 0.85)",
             borderpad=4,
         )
     fig.update_yaxes(tickmode="linear")
     return fig
+
 
 
 def validate_projects(df: pd.DataFrame) -> Tuple[bool, List[str]]:
@@ -956,7 +1315,7 @@ def render_control_panel(df: pd.DataFrame, masters: Dict[str, List[str]]) -> Fil
             )
             bar_color = st.color_picker(
                 "バー基調色",
-                DEFAULT_BAR_COLOR,
+                get_default_bar_color(),
                 help="タイムラインのバー色をチームカラーに合わせて変更できます。",
                 key="bar_color_picker",
             )
@@ -1160,30 +1519,119 @@ def render_control_panel(df: pd.DataFrame, masters: Dict[str, List[str]]) -> Fil
     )
 
 
+
 def apply_brand_theme() -> None:
+    palette = theme_palette()
+    theme_id = get_active_theme_id()
     st.markdown(
         f"""
+        <script>
+        (function() {{
+            const themeKey = 'dashboard-theme';
+            const sessionKey = 'dashboard-theme-session';
+            const activeTheme = '{theme_id}';
+            try {{
+                const root = window.parent && window.parent !== window ? window.parent : window;
+                const params = new URLSearchParams(root.location.search);
+                const urlTheme = params.get('theme');
+                const stored = root.localStorage ? root.localStorage.getItem(themeKey) : null;
+                const sessionTheme = root.sessionStorage ? root.sessionStorage.getItem(sessionKey) : null;
+
+                if (stored && stored !== activeTheme && !sessionTheme) {{
+                    if (urlTheme !== stored) {{
+                        params.set('theme', stored);
+                        const query = params.toString();
+                        const nextUrl = query ? `${{root.location.pathname}}?${{query}}` : root.location.pathname;
+                        root.location.replace(nextUrl);
+                        return;
+                    }}
+                }}
+
+                if (root.sessionStorage) {{
+                    root.sessionStorage.setItem(sessionKey, activeTheme);
+                }}
+                if (root.localStorage) {{
+                    root.localStorage.setItem(themeKey, activeTheme);
+                }}
+            }} catch (error) {{
+                console.warn('テーマ設定の永続化に失敗しました', error);
+            }}
+        }})();
+        </script>
         <style>
         :root {{
-            --brand-navy: {BRAND_COLORS['navy']};
-            --brand-slate: {BRAND_COLORS['slate']};
-            --brand-mist: {BRAND_COLORS['mist']};
-            --brand-cloud: {BRAND_COLORS['cloud']};
-            --brand-gold: {BRAND_COLORS['gold']};
-            --brand-sky: {BRAND_COLORS['sky']};
-            --brand-crimson: {BRAND_COLORS['crimson']};
-            --accent-green: #2F9E5B;
-            --surface-bg: #f7f9fc;
-            --surface-panel: #e7eef8;
-            --surface-card: #ffffff;
-            --surface-outline: #d5deeb;
-            --text-muted: #5b6c82;
-            --text-invert: #ffffff;
+            --brand-navy: {palette['navy']};
+            --brand-sky: {palette['sky']};
+            --brand-teal: {palette['teal']};
+            --brand-gold: {palette['gold']};
+            --brand-crimson: {palette['crimson']};
+            --brand-slate: {palette['slate']};
+            --brand-mist: {palette['mist']};
+            --brand-cloud: {palette['cloud']};
+            --accent-green: {palette['accent_green']};
+            --surface-bg: {palette['surface_bg']};
+            --surface-panel: {palette['surface_panel']};
+            --surface-card: {palette['surface_card']};
+            --surface-elevated: {palette['surface_elevated']};
+            --surface-outline: {palette['surface_outline']};
+            --surface-outline-strong: {palette['surface_outline_strong']};
+            --text-primary: {palette['text_primary']};
+            --text-secondary: {palette['text_secondary']};
+            --text-interactive: {palette['text_interactive']};
+            --text-error: {palette['text_error']};
+            --text-disabled: {palette['text_disabled']};
+            --text-invert: {palette['text_invert']};
+            --shadow-strong: {palette['shadow_strong']};
+            --shadow-soft: {palette['shadow_soft']};
+            --kpi-gradient-start: {palette['kpi_gradient_start']};
+            --kpi-gradient-end: {palette['kpi_gradient_end']};
+            --kpi-border: {palette['kpi_border']};
+            --kpi-icon-bg: {palette['kpi_icon_bg']};
+            --kpi-icon-color: {palette['kpi_icon_color']};
+            --kpi-title: {palette['kpi_title']};
+            --kpi-subtitle: {palette['kpi_subtitle']};
+            --control-gradient-start: {palette['control_gradient_start']};
+            --control-gradient-end: {palette['control_gradient_end']};
+            --control-border: {palette['control_border']};
+            --control-shadow: {palette['control_shadow']};
+            --interactive-primary-start: {palette['interactive_primary_start']};
+            --interactive-primary-end: {palette['interactive_primary_end']};
+            --interactive-primary-hover-start: {palette['interactive_primary_hover_start']};
+            --interactive-primary-hover-end: {palette['interactive_primary_hover_end']};
+            --interactive-soft-bg: {palette['interactive_soft_bg']};
+            --interactive-soft-border: {palette['interactive_soft_border']};
+            --interactive-soft-text: {palette['interactive_soft_text']};
+            --table-row-odd: {palette['table_row_odd']};
+            --table-row-even: {palette['table_row_even']};
+            --table-hover: {palette['table_hover']};
+            --badge-neutral-bg: {palette['badge_neutral_bg']};
+            --badge-neutral-text: {palette['badge_neutral_text']};
+            --badge-info-bg: {palette['badge_info_bg']};
+            --badge-info-text: {palette['badge_info_text']};
+            --badge-success-bg: {palette['badge_success_bg']};
+            --badge-success-text: {palette['badge_success_text']};
+            --badge-warn-bg: {palette['badge_warn_bg']};
+            --badge-warn-text: {palette['badge_warn_text']};
+            --badge-alert-bg: {palette['badge_alert_bg']};
+            --badge-alert-text: {palette['badge_alert_text']};
+            --legend-bg: {palette['legend_bg']};
+            --legend-border: {palette['legend_border']};
+            --plot-grid: {palette['plot_grid']};
+            --plot-zero: {palette['plot_zero']};
+            --plot-font: {palette['plot_font']};
+            --plot-axis: {palette['plot_axis']};
+            --danger-color: {palette['danger']};
+            --info-color: {palette['info']};
+            --success-color: {palette['success']};
+            --warning-color: {palette['warning']};
+            --danger-shadow: {palette['danger_shadow']};
+            --info-shadow: {palette['info_shadow']};
+            --quick-action-shadow: {palette['quick_action_shadow']};
         }}
 
         html, body, [data-testid="stAppViewContainer"], [data-testid="block-container"] {{
             background-color: var(--surface-bg) !important;
-            color: var(--brand-slate);
+            color: var(--text-primary);
             font-family: 'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif;
         }}
 
@@ -1207,16 +1655,16 @@ def apply_brand_theme() -> None:
 
         .page-subtitle {{
             font-size: 1rem;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             margin-bottom: 1.1rem;
         }}
 
         .kpi-card {{
-            background: linear-gradient(145deg, rgba(30, 76, 156, 0.95), rgba(11, 31, 58, 0.95));
+            background: linear-gradient(145deg, var(--kpi-gradient-start), var(--kpi-gradient-end));
             border-radius: 18px;
             padding: 1.3rem 1.5rem;
-            box-shadow: 0 18px 36px rgba(11, 31, 58, 0.16);
-            border: 1px solid rgba(12, 31, 58, 0.18);
+            box-shadow: 0 18px 36px var(--shadow-strong);
+            border: 1px solid var(--kpi-border);
             display: flex;
             gap: 1rem;
             align-items: center;
@@ -1225,8 +1673,8 @@ def apply_brand_theme() -> None:
         }}
 
         .kpi-card.alert {{
-            border-color: rgba(176, 48, 56, 0.45);
-            box-shadow: 0 18px 44px rgba(176, 48, 56, 0.25);
+            border-color: var(--danger-color);
+            box-shadow: 0 18px 44px var(--danger-shadow);
         }}
 
         .kpi-icon {{
@@ -1236,13 +1684,13 @@ def apply_brand_theme() -> None:
             display: grid;
             place-items: center;
             font-size: 1.6rem;
-            background: rgba(255, 255, 255, 0.18);
-            color: #dce7f8;
+            background: var(--kpi-icon-bg);
+            color: var(--kpi-icon-color);
         }}
 
         .kpi-title {{
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.75);
+            color: var(--kpi-title);
             text-transform: uppercase;
             letter-spacing: 0.08em;
         }}
@@ -1256,47 +1704,47 @@ def apply_brand_theme() -> None:
 
         .kpi-subtitle {{
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--kpi-subtitle);
         }}
 
         .fiscal-pill {{
             display: inline-flex;
             align-items: center;
             gap: 0.3rem;
-            background: rgba(30, 76, 156, 0.12);
+            background: var(--interactive-soft-bg);
             border-radius: 999px;
             padding: 0.35rem 0.9rem;
             font-size: 0.85rem;
-            color: var(--brand-navy);
-            box-shadow: inset 0 0 0 1px rgba(30, 76, 156, 0.25);
+            color: var(--interactive-soft-text);
+            box-shadow: inset 0 0 0 1px var(--interactive-soft-border);
         }}
 
         .control-panel {{
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(231, 238, 248, 0.88));
+            background: linear-gradient(180deg, var(--control-gradient-start), var(--control-gradient-end));
             border-radius: 22px;
             padding: 1.1rem 1.4rem 1.25rem;
-            border: 1px solid var(--surface-outline);
-            box-shadow: 0 22px 44px rgba(11, 31, 58, 0.14);
+            border: 1px solid var(--control-border);
+            box-shadow: 0 22px 44px var(--control-shadow);
             margin-bottom: 1.2rem;
         }}
 
         .control-panel h4,
         .control-panel h5,
         .control-panel label {{
-            color: var(--brand-slate);
+            color: var(--text-primary);
         }}
 
         .control-panel .stButton > button {{
             border-radius: 14px;
-            background: linear-gradient(145deg, var(--brand-sky), var(--brand-navy));
-            color: white;
+            background: linear-gradient(145deg, var(--interactive-primary-start), var(--interactive-primary-end));
+            color: var(--text-invert);
             border: none;
             font-weight: 600;
-            box-shadow: 0 14px 24px rgba(11, 31, 58, 0.18);
+            box-shadow: 0 14px 24px var(--info-shadow);
         }}
 
         .control-panel .stButton > button:hover {{
-            background: linear-gradient(145deg, #4d86c0, #10274d);
+            background: linear-gradient(145deg, var(--interactive-primary-hover-start), var(--interactive-primary-hover-end));
         }}
 
         .quick-actions {{
@@ -1304,22 +1752,22 @@ def apply_brand_theme() -> None:
         }}
 
         .quick-actions .stButton > button {{
-            background: rgba(30, 76, 156, 0.12) !important;
-            color: var(--brand-navy) !important;
+            background: var(--interactive-soft-bg) !important;
+            color: var(--interactive-soft-text) !important;
             border-radius: 12px !important;
-            border: 1px solid rgba(30, 76, 156, 0.3) !important;
+            border: 1px solid var(--interactive-soft-border) !important;
             font-weight: 600 !important;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 12px 22px var(--quick-action-shadow) !important;
         }}
 
         .quick-actions .stButton > button:hover {{
             transform: translateY(-1px);
-            box-shadow: 0 14px 28px rgba(30, 76, 156, 0.18) !important;
         }}
 
         .quick-hint {{
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             padding-top: 0.35rem;
         }}
 
@@ -1331,66 +1779,61 @@ def apply_brand_theme() -> None:
             font-weight: 600;
             border-radius: 999px;
             padding: 0.25rem 0.65rem;
-            background: rgba(30, 76, 156, 0.12);
-            color: var(--brand-navy);
+            background: var(--badge-neutral-bg);
+            color: var(--badge-neutral-text);
         }}
 
         .status-badge.info {{
-            background: rgba(77, 126, 168, 0.18);
-            color: var(--brand-sky);
+            background: var(--badge-info-bg);
+            color: var(--badge-info-text);
         }}
 
         .status-badge.success {{
-            background: rgba(47, 158, 91, 0.15);
-            color: #2F9E5B;
+            background: var(--badge-success-bg);
+            color: var(--badge-success-text);
         }}
 
         .status-badge.warn {{
-            background: rgba(201, 162, 39, 0.18);
-            color: var(--brand-gold);
+            background: var(--badge-warn-bg);
+            color: var(--badge-warn-text);
         }}
 
         .status-badge.alert {{
-            background: rgba(176, 48, 56, 0.15);
-            color: var(--brand-crimson);
+            background: var(--badge-alert-bg);
+            color: var(--badge-alert-text);
         }}
 
         div[data-testid="stMarkdownContainer"] .risk-high {{
-            color: var(--brand-crimson);
-            font-weight: 600;
-        }}
-
-        div[data-testid="stMarkdownContainer"] .risk-medium {{
-            color: var(--brand-gold);
+            color: var(--danger-color);
             font-weight: 600;
         }}
 
         .element-container:has(.stDataFrame) {{
             border-radius: 18px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(231, 238, 248, 0.92));
+            background: var(--surface-elevated);
             padding: 0.6rem 0.6rem 0.2rem;
-            box-shadow: 0 10px 26px rgba(11, 31, 58, 0.1);
+            box-shadow: 0 10px 26px var(--shadow-soft);
             margin-bottom: 1.2rem;
-            border: 1px solid rgba(30, 76, 156, 0.15);
+            border: 1px solid var(--surface-outline);
         }}
 
         [data-testid="stDataFrame"] table thead tr th {{
-            background: linear-gradient(135deg, rgba(30, 76, 156, 0.95), rgba(11, 31, 58, 0.95));
+            background: linear-gradient(135deg, var(--interactive-primary-start), var(--interactive-primary-end));
             color: var(--text-invert) !important;
             font-weight: 600 !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.25) !important;
+            border-bottom: 1px solid var(--surface-outline) !important;
         }}
 
         [data-testid="stDataFrame"] table tbody tr:nth-child(odd) {{
-            background-color: rgba(239, 244, 252, 0.85);
+            background-color: var(--table-row-odd);
         }}
 
         [data-testid="stDataFrame"] table tbody tr:nth-child(even) {{
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: var(--table-row-even);
         }}
 
         [data-testid="stDataFrame"] table tbody tr:hover {{
-            background-color: rgba(77, 126, 168, 0.16) !important;
+            background-color: var(--table-hover) !important;
         }}
 
         .help-fab {{
@@ -1398,26 +1841,27 @@ def apply_brand_theme() -> None:
             bottom: 26px;
             right: 32px;
             background: var(--brand-navy);
-            color: white !important;
+            color: var(--text-invert) !important;
             padding: 0.75rem 1.1rem;
             border-radius: 999px;
             font-weight: 600;
             text-decoration: none;
-            box-shadow: 0 20px 36px rgba(11, 31, 58, 0.22);
+            box-shadow: 0 20px 36px var(--shadow-strong);
             z-index: 1200;
         }}
 
         .help-fab:hover {{
-            background: #10284f;
+            background: var(--interactive-primary-hover-end);
         }}
         </style>
-        """,
+        """
+        ,
         unsafe_allow_html=True,
     )
 
 
 def render_page_header(fiscal_year: int, fiscal_range: Tuple[date, date]) -> None:
-    col_title, col_meta = st.columns([3.5, 2])
+    col_title, col_meta, col_theme = st.columns([3.2, 2, 1.2])
     with col_title:
         st.markdown('<div class="page-title">工事受注ダッシュボード</div>', unsafe_allow_html=True)
         st.markdown(
@@ -1432,6 +1876,13 @@ def render_page_header(fiscal_year: int, fiscal_range: Tuple[date, date]) -> Non
             f"</div>",
             unsafe_allow_html=True,
         )
+    with col_theme:
+        theme_id = get_active_theme_id()
+        theme_info = get_theme_config(theme_id)
+        label = f"{theme_info['icon']} {theme_info['label']}"
+        if st.button(label, key="theme_cycle_button", help="ライト / ダーク / セピアを切り替えます。"):
+            cycle_theme()
+        st.caption("外観テーマ")
 
 
 def render_quick_actions() -> None:
@@ -1905,6 +2356,17 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
 def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
     st.subheader("集計 / 分析")
     enriched = enrich_projects(df) if not df.empty else df
+    palette = theme_palette()
+    chart = theme_chart_settings()
+    template = build_plotly_template()
+    colorway = get_theme_colorway()
+    income_color = colorway[0] if colorway else palette.get("timeline_complete")
+    cost_color = colorway[1] if len(colorway) > 1 else palette.get("timeline_progress")
+    gross_color = colorway[2] if len(colorway) > 2 else palette.get("success")
+    margin_color = colorway[3] if len(colorway) > 3 else palette.get("timeline_progress")
+    cash_out_color = palette.get("timeline_delay", palette.get("danger"))
+    cash_total_color = colorway[3] if len(colorway) > 3 else palette.get("teal")
+    hist_color = palette.get("timeline_progress", income_color)
 
     total_revenue = enriched["受注金額"].sum()
     gross_profit = enriched["粗利額"].sum()
@@ -1965,13 +2427,13 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         x=monthly["年月"],
         y=monthly["受注金額"],
         name="受注金額",
-        marker=dict(color=BRAND_COLORS["navy"], line=dict(width=0)),
+        marker=dict(color=income_color, line=dict(width=0)),
     )
     trend_fig.add_bar(
         x=monthly["年月"],
         y=monthly["予定原価"],
         name="予定原価",
-        marker=dict(color=BRAND_COLORS["sky"], line=dict(width=0)),
+        marker=dict(color=cost_color, line=dict(width=0)),
     )
     trend_fig.add_trace(
         go.Scatter(
@@ -1979,8 +2441,8 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             y=monthly["粗利"],
             mode="lines+markers",
             name="粗利",
-            marker=dict(color=BRAND_COLORS["gold"], size=8),
-            line=dict(color=BRAND_COLORS["gold"], width=3),
+            marker=dict(color=gross_color, size=8),
+            line=dict(color=gross_color, width=3),
         )
     )
     trend_fig.add_trace(
@@ -1990,15 +2452,15 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             mode="lines",
             name="粗利率",
             yaxis="y2",
-            line=dict(color=BRAND_COLORS["teal"], width=2, dash="dot"),
+            line=dict(color=margin_color, width=2, dash="dot"),
         )
     )
     trend_fig.update_layout(
-        template=BRAND_TEMPLATE,
+        template=template,
         barmode="group",
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        yaxis=dict(title="金額", gridcolor=BRAND_COLORS["cloud"], zerolinecolor=BRAND_COLORS["cloud"]),
+        plot_bgcolor=chart.get("plot_bg"),
+        paper_bgcolor=chart.get("plot_paper"),
+        yaxis=dict(title="金額", gridcolor=chart.get("grid"), zerolinecolor=chart.get("zeroline")),
         yaxis2=dict(title="粗利率 (%)", overlaying="y", side="right", gridcolor="rgba(0,0,0,0)"),
         height=480,
         margin=dict(t=60, b=40, l=10, r=10, pad=10),
@@ -2011,13 +2473,13 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         x=monthly["年月"],
         y=monthly["キャッシュイン"],
         name="キャッシュイン",
-        marker=dict(color=BRAND_COLORS["teal"], line=dict(width=0)),
+        marker=dict(color=income_color, line=dict(width=0)),
     )
     cash_fig.add_bar(
         x=monthly["年月"],
         y=-monthly["キャッシュアウト"],
         name="キャッシュアウト",
-        marker=dict(color="#8FAACF", line=dict(width=0)),
+        marker=dict(color=cash_out_color, line=dict(width=0)),
     )
     cash_fig.add_trace(
         go.Scatter(
@@ -2026,16 +2488,16 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             mode="lines+markers",
             name="累計キャッシュフロー",
             yaxis="y2",
-            marker=dict(color=BRAND_COLORS["navy"], size=7),
-            line=dict(color=BRAND_COLORS["navy"], width=3),
+            marker=dict(color=cash_total_color, size=7),
+            line=dict(color=cash_total_color, width=3),
         )
     )
     cash_fig.update_layout(
-        template=BRAND_TEMPLATE,
+        template=template,
         barmode="relative",
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        yaxis=dict(title="キャッシュフロー", gridcolor=BRAND_COLORS["cloud"], zerolinecolor=BRAND_COLORS["cloud"]),
+        plot_bgcolor=chart.get("plot_bg"),
+        paper_bgcolor=chart.get("plot_paper"),
+        yaxis=dict(title="キャッシュフロー", gridcolor=chart.get("grid"), zerolinecolor=chart.get("zeroline")),
         yaxis2=dict(title="累計 (円)", overlaying="y", side="right", gridcolor="rgba(0,0,0,0)"),
         height=420,
         margin=dict(t=60, b=40, l=10, r=10, pad=10),
@@ -2053,14 +2515,14 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
                         labels=enriched["工種"],
                         values=enriched["受注金額"],
                         hole=0.45,
-                        marker=dict(colors=BRAND_COLORWAY, line=dict(color="white", width=2)),
+                        marker=dict(colors=get_theme_colorway(), line=dict(color="white", width=2)),
                         textinfo="label+percent",
                     )
                 ]
             )
             pie1.update_layout(
                 title="工種別構成比",
-                template=BRAND_TEMPLATE,
+                template=template,
                 showlegend=False,
             )
             st.plotly_chart(pie1, use_container_width=True)
@@ -2074,14 +2536,14 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
                         labels=enriched["得意先"],
                         values=enriched["受注金額"],
                         hole=0.45,
-                        marker=dict(colors=BRAND_COLORWAY, line=dict(color="white", width=2)),
+                        marker=dict(colors=get_theme_colorway(), line=dict(color="white", width=2)),
                         textinfo="label+percent",
                     )
                 ]
             )
             pie2.update_layout(
                 title="得意先別構成比",
-                template=BRAND_TEMPLATE,
+                template=template,
                 showlegend=False,
             )
             st.plotly_chart(pie2, use_container_width=True)
@@ -2094,18 +2556,18 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
                 go.Histogram(
                     x=enriched["粗利率"],
                     nbinsx=10,
-                    marker=dict(color=BRAND_COLORS["navy"], opacity=0.75),
+                    marker=dict(color=hist_color, opacity=0.75),
                 )
             ]
         )
         hist.update_layout(
             title="粗利率ヒストグラム",
-            template=BRAND_TEMPLATE,
+            template=template,
             bargap=0.1,
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            xaxis=dict(title="粗利率", gridcolor=BRAND_COLORS["cloud"]),
-            yaxis=dict(title="件数", gridcolor=BRAND_COLORS["cloud"]),
+            plot_bgcolor=chart.get("plot_bg"),
+            paper_bgcolor=chart.get("plot_paper"),
+            xaxis=dict(title="粗利率", gridcolor=chart.get("grid")),
+            yaxis=dict(title="件数", gridcolor=chart.get("grid")),
         )
         st.plotly_chart(hist, use_container_width=True)
 
@@ -2137,6 +2599,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         }
     )
     st.dataframe(monthly_view, use_container_width=True)
+
 
 
 def render_settings_tab(masters: Dict[str, List[str]]) -> None:
@@ -2266,6 +2729,15 @@ def render_settings_tab(masters: Dict[str, List[str]]) -> None:
 
     st.markdown("<div id='settings-display'></div>", unsafe_allow_html=True)
     st.markdown("### 表示設定")
+    theme_keys = list(THEME_PRESETS.keys())
+    theme_labels = [f"{THEME_PRESETS[key]['icon']} {THEME_PRESETS[key]['label']}" for key in theme_keys]
+    current_theme = get_active_theme_id()
+    current_index = theme_keys.index(current_theme)
+    selected_label = st.selectbox("ダッシュボードテーマ", theme_labels, index=current_index)
+    selected_theme = theme_keys[theme_labels.index(selected_label)]
+    if selected_theme != current_theme:
+        set_active_theme(selected_theme)
+        st.experimental_rerun()
     currency_format = st.text_input("通貨フォーマット", masters.get("currency_format", "#,###"))
     decimal_places = st.number_input("小数点以下桁数", min_value=0, max_value=4, value=int(masters.get("decimal_places", 0)))
 
@@ -2299,6 +2771,7 @@ def render_settings_tab(masters: Dict[str, List[str]]) -> None:
 
 def main() -> None:
     st.set_page_config(page_title="工事受注案件 予定表", layout="wide")
+    initialize_theme()
     apply_brand_theme()
     ensure_data_files()
     masters = load_masters()
