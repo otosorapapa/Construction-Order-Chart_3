@@ -1072,7 +1072,8 @@ def create_timeline(
 ) -> go.Figure:
     if df.empty:
         fig = go.Figure()
-        fig.update_layout(
+        fig = apply_brand_layout(
+            fig,
             xaxis=dict(
                 title=dict(
                     text="期間",
@@ -1090,7 +1091,6 @@ def create_timeline(
                 tickfont=dict(color=BRAND_COLORS["slate"]),
                 gridcolor="rgba(0,0,0,0)",
             ),
-            template=get_brand_template(),
             height=500,
             plot_bgcolor="white",
             paper_bgcolor="white",
@@ -1233,9 +1233,9 @@ def create_timeline(
     range_max = range_end + pd.Timedelta(days=1)
     label_font = {"高": 14, "中": 12, "低": 10}
     project_count = max(1, len(fig.data))
-    fig.update_layout(
+    fig = apply_brand_layout(
+        fig,
         barmode="stack",
-        template=get_brand_template(),
         plot_bgcolor="white",
         paper_bgcolor="white",
         height=max(400, 40 * project_count + 200),
@@ -1324,8 +1324,8 @@ def create_schedule_chart(
 ) -> go.Figure:
     if df.empty:
         fig = go.Figure()
-        fig.update_layout(
-            template=get_brand_template(),
+        fig = apply_brand_layout(
+            fig,
             plot_bgcolor="white",
             paper_bgcolor="white",
             height=400,
@@ -1422,8 +1422,8 @@ def create_schedule_chart(
     range_max = range_end + pd.Timedelta(days=1)
     project_count = max(1, len(project_labels))
 
-    fig.update_layout(
-        template=get_brand_template(),
+    fig = apply_brand_layout(
+        fig,
         plot_bgcolor="white",
         paper_bgcolor="white",
         barmode="overlay",
@@ -2416,6 +2416,21 @@ def get_brand_template() -> go.layout.Template:
     return template
 
 
+def apply_brand_layout(fig: go.Figure, **layout_kwargs) -> go.Figure:
+    """Apply the brand template to a Plotly figure with graceful fallback."""
+
+    template = get_brand_template()
+    try:
+        fig.update_layout(template=template, **layout_kwargs)
+    except (ValueError, TypeError):
+        warning_key = "_brand_template_warning"
+        if not st.session_state.get(warning_key):
+            st.warning("カスタムテーマの適用に失敗したため、標準テンプレートを使用しています。")
+            st.session_state[warning_key] = True
+        fig.update_layout(template="plotly_white", **layout_kwargs)
+    return fig
+
+
 def apply_plotly_theme(fig: go.Figure) -> go.Figure:
     theme = get_active_theme()
     fig.update_layout(
@@ -3024,8 +3039,8 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             line=dict(color=BRAND_COLORS["teal"], width=2, dash="dot"),
         )
     )
-    trend_fig.update_layout(
-        template=get_brand_template(),
+    trend_fig = apply_brand_layout(
+        trend_fig,
         barmode="group",
         plot_bgcolor="white",
         paper_bgcolor="white",
@@ -3088,8 +3103,8 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             line=dict(color=BRAND_COLORS["navy"], width=3),
         )
     )
-    cash_fig.update_layout(
-        template=get_brand_template(),
+    cash_fig = apply_brand_layout(
+        cash_fig,
         barmode="relative",
         plot_bgcolor="white",
         paper_bgcolor="white",
@@ -3143,9 +3158,9 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
                     )
                 ]
             )
-            pie1.update_layout(
+            pie1 = apply_brand_layout(
+                pie1,
                 title="工種別構成比",
-                template=get_brand_template(),
                 showlegend=False,
             )
             pie1 = apply_plotly_theme(pie1)
@@ -3165,9 +3180,9 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
                     )
                 ]
             )
-            pie2.update_layout(
+            pie2 = apply_brand_layout(
+                pie2,
                 title="得意先別構成比",
-                template=get_brand_template(),
                 showlegend=False,
             )
             pie2 = apply_plotly_theme(pie2)
@@ -3185,9 +3200,9 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
                 )
             ]
         )
-        hist.update_layout(
+        hist = apply_brand_layout(
+            hist,
             title="粗利率ヒストグラム",
-            template=get_brand_template(),
             bargap=0.1,
             plot_bgcolor="white",
             paper_bgcolor="white",
