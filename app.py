@@ -1399,6 +1399,64 @@ def apply_brand_theme() -> None:
             background: linear-gradient(145deg, #4d86c0, #10274d);
         }}
 
+        .control-panel div[data-baseweb="select"],
+        .control-panel div[data-baseweb="input"],
+        .control-panel div[data-baseweb="textarea"],
+        .control-panel [data-testid="stDateInput"] div[data-baseweb="input"],
+        .control-panel [data-testid="stColorPicker"] div[data-testid="stColorPickerValue"] {{
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 12px;
+            border: 1px solid rgba(47, 60, 72, 0.18);
+            color: var(--text-strong);
+            box-shadow: inset 0 1px 2px rgba(11, 31, 58, 0.08);
+        }}
+
+        .control-panel div[data-baseweb="select"] span,
+        .control-panel div[data-baseweb="select"] input,
+        .control-panel div[data-baseweb="input"] input,
+        .control-panel div[data-baseweb="textarea"] textarea,
+        .control-panel [data-testid="stDateInput"] input,
+        .control-panel [data-testid="stColorPicker"] input {{
+            color: var(--text-strong) !important;
+        }}
+
+        [data-testid="stRadio"] div[role="radiogroup"] {{
+            gap: 0.45rem;
+            flex-wrap: wrap;
+        }}
+
+        [data-testid="stRadio"] div[role="radiogroup"] > label {{
+            border-radius: 999px;
+            padding: 0.35rem 0.85rem;
+            border: 1px solid rgba(30, 76, 156, 0.22);
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--text-strong) !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+        }}
+
+        [data-testid="stRadio"] div[role="radiogroup"] > label:hover {{
+            background: rgba(77, 126, 168, 0.16);
+            border-color: rgba(77, 126, 168, 0.38);
+            color: var(--brand-navy) !important;
+            box-shadow: 0 8px 18px rgba(11, 31, 58, 0.12);
+        }}
+
+        [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) {{
+            background: linear-gradient(135deg, rgba(77, 126, 168, 0.22), rgba(11, 31, 58, 0.15));
+            border-color: rgba(11, 31, 58, 0.4);
+            color: var(--brand-navy) !important;
+            font-weight: 600;
+            box-shadow: 0 10px 22px rgba(11, 31, 58, 0.18);
+        }}
+
+        [data-testid="stRadio"] div[role="radiogroup"] > label div[data-testid="stMarkdownContainer"] p {{
+            color: inherit !important;
+            margin: 0;
+        }}
+
         .quick-actions {{
             margin-top: 0.4rem;
         }}
