@@ -123,6 +123,19 @@ class FilterState:
     bar_color: str
 
 
+def switch_main_tab(tab_label: str) -> None:
+    """Programmatically switch the main content tab."""
+    st.session_state["main_tabs"] = tab_label
+    st.experimental_rerun()
+
+
+def trigger_new_project_modal() -> None:
+    """Open the project creation modal and jump to the project list tab."""
+    st.session_state["show_project_modal"] = True
+    st.session_state["main_tabs"] = "案件一覧"
+    st.experimental_rerun()
+
+
 def ensure_data_files() -> None:
     os.makedirs(DATA_DIR, exist_ok=True)
     if not os.path.exists(PROJECT_CSV):
@@ -884,11 +897,35 @@ def render_sidebar(df: pd.DataFrame, masters: Dict[str, List[str]]) -> FilterSta
 
     with st.sidebar.expander("フィルタ", expanded=False):
         st.caption("フィルターを変更するとグラフや表が即座に更新されます。")
-        period_from = st.date_input("期間 From", value=start, help="着工・竣工日の範囲で絞り込みます。")
-        period_to = st.date_input("期間 To", value=end, help="着工・竣工日の範囲で絞り込みます。")
-        if period_from > period_to:
-            st.warning("期間 From が To より後になっています。値を入れ替えました。")
+
+        period_state_key = "period_range_state"
+        if period_state_key not in st.session_state:
+            st.session_state[period_state_key] = (start, end)
+            st.session_state["period_range_year"] = fiscal_year
+        elif st.session_state.get("period_range_year") != fiscal_year:
+            st.session_state[period_state_key] = (start, end)
+            st.session_state["period_range_year"] = fiscal_year
+
+        current_range = st.date_input(
+            "対象期間",
+            value=st.session_state.get(period_state_key, (start, end)),
+            min_value=start - relativedelta(years=1),
+            max_value=end + relativedelta(years=1),
+            format="YYYY-MM-DD",
+            help="カレンダーから範囲を選択できます。事業年度を変更すると期間が自動的に切り替わります。",
+            key="period_range_picker",
+        )
+
+        if isinstance(current_range, tuple):
+            period_from, period_to = current_range
+        else:
+            period_from = current_range
+            period_to = current_range
+
+        if period_from and period_to and period_from > period_to:
             period_from, period_to = period_to, period_from
+
+        st.session_state[period_state_key] = (period_from, period_to)
 
         status_options = sorted(df["ステータス"].dropna().unique())
         category_options = get_active_master_values(masters, "categories")
@@ -1172,6 +1209,30 @@ def apply_brand_theme() -> None:
             box-shadow: 0 8px 24px rgba(11, 31, 58, 0.05);
             margin-bottom: 1.2rem;
         }}
+
+        .quick-hint {{
+            font-size: 0.8rem;
+            color: #6b7a90;
+            padding-top: 0.35rem;
+        }}
+
+        .help-fab {{
+            position: fixed;
+            bottom: 26px;
+            right: 32px;
+            background: var(--brand-navy);
+            color: white !important;
+            padding: 0.75rem 1.1rem;
+            border-radius: 999px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 20px 36px rgba(11, 31, 58, 0.22);
+            z-index: 1200;
+        }}
+
+        .help-fab:hover {{
+            background: #10284f;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -1196,6 +1257,42 @@ def render_page_header(fiscal_year: int, fiscal_range: Tuple[date, date]) -> Non
             f"<div style='display:flex;justify-content:flex-end'><span class='fiscal-pill'>FY {fiscal_year} : {fiscal_from:%Y.%m} - {fiscal_to:%Y.%m}</span></div>",
             unsafe_allow_html=True,
         )
+
+
+def render_quick_actions() -> None:
+    st.markdown("### クイックアクセス")
+    actions = [
+        {
+            "label": "＋ 新規案件を登録",
+            "description": "案件一覧タブを開き、登録フォームを立ち上げます。",
+            "callback": trigger_new_project_modal,
+        },
+        {
+            "label": "📊 最新の受注状況を見る",
+            "description": "タイムラインで最新の受注状況を確認します。",
+            "callback": lambda: switch_main_tab("タイムライン"),
+        },
+        {
+            "label": "💹 工事別の粗利を確認",
+            "description": "集計/分析タブの粗利指標へ移動します。",
+            "callback": lambda: switch_main_tab("集計/分析"),
+        },
+        {
+            "label": "⚙️ マスタ設定を開く",
+            "description": "各種マスタや休日設定を編集します。",
+            "callback": lambda: switch_main_tab("設定"),
+        },
+    ]
+    cols = st.columns(len(actions))
+    for idx, (col, action) in enumerate(zip(cols, actions)):
+        with col:
+            if st.button(action["label"], use_container_width=True, key=f"qa_{idx}"):
+                action["callback"]()
+            st.caption(action["description"])
+    st.markdown(
+        "<a class='help-fab' href='#onboarding-guide'>❓ チュートリアル</a>",
+        unsafe_allow_html=True,
+    )
 
 
 def prepare_export(df: Optional[pd.DataFrame], file_format: str = "CSV"):
@@ -1245,8 +1342,172 @@ def import_projects(uploaded, mode: str) -> None:
         st.sidebar.error(f"インポート中にエラーが発生しました: {exc}")
 
 
-def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame) -> None:
+def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, masters: Dict[str, List[str]]) -> None:
     st.subheader("案件一覧")
+    col_add, col_draft, col_hint1, col_hint2 = st.columns([1.2, 1, 2.2, 2.2])
+    if col_add.button("＋ 新規案件を追加", type="primary", use_container_width=True):
+        st.session_state["show_project_modal"] = True
+
+    draft_exists = bool(st.session_state.get("project_form_draft"))
+    if col_draft.button(
+        "下書きを開く",
+        use_container_width=True,
+        disabled=not draft_exists,
+        help="保存済みの下書きがある場合に再開できます。",
+    ) and draft_exists:
+        st.session_state["show_project_modal"] = True
+
+    col_hint1.markdown("<div class='quick-hint'>案件登録は専用フォームから行えます。</div>", unsafe_allow_html=True)
+    col_hint2.markdown(
+        "<div class='quick-hint'>編集後は下の保存ボタンで確定してください。</div>",
+        unsafe_allow_html=True,
+    )
+
+    if st.session_state.get("show_project_modal"):
+        status_options = sorted([s for s in full_df["ステータス"].dropna().unique() if s])
+        contractor_options = sorted([c for c in full_df["元請区分"].dropna().unique() if c])
+        clients = get_active_master_values(masters, "clients")
+        categories = get_active_master_values(masters, "categories")
+        managers = get_active_master_values(masters, "managers")
+        today = date.today()
+
+        def find_index(options_list: List[str], value: str) -> int:
+            if not options_list:
+                return 0
+            try:
+                return options_list.index(value)
+            except ValueError:
+                return 0
+
+        default_draft = {
+            "id": "",
+            "案件名": "",
+            "得意先": clients[0] if clients else "",
+            "工種": categories[0] if categories else "",
+            "元請区分": contractor_options[0] if contractor_options else "",
+            "ステータス": status_options[0] if status_options else "",
+            "着工日": today,
+            "竣工日": today + relativedelta(months=3),
+            "受注金額": 0,
+            "予定原価": 0,
+            "粗利率": 0,
+            "担当者": managers[0] if managers else "",
+            "月平均必要人数": 0.0,
+            "備考": "",
+        }
+        draft = {**default_draft, **st.session_state.get("project_form_draft", {})}
+
+        with st.modal("新規案件を登録", key="project_modal"):
+            st.markdown("案件の基本情報を入力してください。必須項目は * で示しています。")
+            with st.form("project_create_form"):
+                id_value = st.text_input("* 案件ID", value=draft.get("id", ""))
+                name_value = st.text_input("* 案件名", value=draft.get("案件名", ""))
+                col_master = st.columns(2)
+                client_value = col_master[0].selectbox(
+                    "得意先",
+                    clients or [""],
+                    index=find_index(clients, draft.get("得意先", clients[0] if clients else "")),
+                )
+                category_value = col_master[1].selectbox(
+                    "工種",
+                    categories or [""],
+                    index=find_index(categories, draft.get("工種", categories[0] if categories else "")),
+                )
+                col_secondary = st.columns(2)
+                contractor_value = col_secondary[0].selectbox(
+                    "元請区分",
+                    contractor_options or [""],
+                    index=find_index(contractor_options, draft.get("元請区分", contractor_options[0] if contractor_options else "")),
+                )
+                status_value = col_secondary[1].selectbox(
+                    "ステータス",
+                    status_options or [""],
+                    index=find_index(status_options, draft.get("ステータス", status_options[0] if status_options else "")),
+                )
+                date_cols = st.columns(2)
+                start_value = date_cols[0].date_input("* 着工日", value=draft.get("着工日", today))
+                end_value = date_cols[1].date_input("* 竣工日", value=draft.get("竣工日", today + relativedelta(months=3)))
+                finance_cols = st.columns(2)
+                order_value = finance_cols[0].number_input(
+                    "受注金額", min_value=0, value=int(draft.get("受注金額", 0))
+                )
+                cost_value = finance_cols[1].number_input(
+                    "予定原価", min_value=0, value=int(draft.get("予定原価", 0))
+                )
+                extra_cols = st.columns(2)
+                margin_value = extra_cols[0].number_input(
+                    "粗利率(%)", min_value=-100, max_value=100, value=int(draft.get("粗利率", 0))
+                )
+                manager_value = extra_cols[1].selectbox(
+                    "担当者",
+                    managers or [""],
+                    index=find_index(managers, draft.get("担当者", managers[0] if managers else "")),
+                )
+                manpower_value = st.number_input(
+                    "月平均必要人数", min_value=0.0, value=float(draft.get("月平均必要人数", 0.0)), step=0.5
+                )
+                note_value = st.text_area("備考", value=draft.get("備考", ""))
+
+                submit_col1, submit_col2, submit_col3 = st.columns([1, 1, 2])
+                save_new = submit_col1.form_submit_button("登録して保存", type="primary")
+                save_draft = submit_col2.form_submit_button("下書きを保存")
+                cancel_modal = submit_col3.form_submit_button("閉じる")
+
+                new_record = {
+                    "id": id_value.strip(),
+                    "案件名": name_value.strip(),
+                    "得意先": client_value,
+                    "工種": category_value,
+                    "元請区分": contractor_value,
+                    "ステータス": status_value,
+                    "着工日": start_value,
+                    "竣工日": end_value,
+                    "受注金額": order_value,
+                    "予定原価": cost_value,
+                    "粗利率": margin_value,
+                    "担当者": manager_value,
+                    "月平均必要人数": manpower_value,
+                    "備考": note_value,
+                }
+
+                if save_draft:
+                    st.session_state["project_form_draft"] = new_record
+                    st.toast("下書きを保存しました。", icon="📝")
+
+                if cancel_modal:
+                    st.session_state["show_project_modal"] = False
+                    st.experimental_rerun()
+
+                if save_new:
+                    errors: List[str] = []
+                    if not new_record["id"]:
+                        errors.append("案件IDは必須です。")
+                    if not new_record["案件名"]:
+                        errors.append("案件名は必須です。")
+                    if new_record["竣工日"] < new_record["着工日"]:
+                        errors.append("竣工日は着工日以降に設定してください。")
+                    existing_ids = set(full_df["id"].astype(str).str.strip())
+                    if new_record["id"] in existing_ids:
+                        errors.append("同じ案件IDが既に存在します。")
+
+                    if errors:
+                        for msg in errors:
+                            st.error(msg)
+                    else:
+                        st.session_state.pop("project_form_draft", None)
+                        st.session_state["show_project_modal"] = False
+                        persist_record = {col: new_record.get(col, "") for col in PROJECT_BASE_COLUMNS}
+                        persist_record["受注予定額"] = persist_record.get("受注予定額") or order_value
+                        for numeric_col in PROJECT_NUMERIC_COLUMNS:
+                            persist_record.setdefault(numeric_col, 0)
+                        for date_col in PROJECT_DATE_COLUMNS:
+                            persist_record.setdefault(date_col, None)
+                        persist_record["受注予定額"] = persist_record.get("受注予定額", 0)
+                        persist_df = pd.concat([full_df, pd.DataFrame([persist_record])], ignore_index=True)
+                        save_projects(persist_df)
+                        st.success("新規案件を保存しました。案件一覧を更新します。")
+                        st.experimental_rerun()
+
     display_df = enrich_projects(filtered_df) if not filtered_df.empty else filtered_df.copy()
     if display_df.empty:
         st.info("条件に合致する案件がありません。フィルタを変更するか、新規行を追加してください。")
@@ -1345,7 +1606,7 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame) -> Non
 
     edited = st.data_editor(
         display_df,
-        num_rows="dynamic",
+        num_rows="fixed",
         hide_index=True,
         use_container_width=True,
         column_order=column_order,
@@ -1684,6 +1945,37 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
 
 def render_settings_tab(masters: Dict[str, List[str]]) -> None:
     st.subheader("設定")
+    st.markdown(
+        """
+        <style>
+        [data-testid="stSidebar"] {display: none !important;}
+        [data-testid="stSidebarNavSeparator"] {display: none !important;}
+        .settings-nav {display:flex; gap:0.75rem; flex-wrap:wrap; margin:0.5rem 0 1.2rem;}
+        .settings-nav a {
+            background: var(--brand-navy);
+            color: #fff;
+            padding: 0.45rem 1rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            box-shadow: 0 8px 18px rgba(11,31,58,0.18);
+        }
+        .settings-nav a:hover {background: #10284f;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        <div class="settings-nav">
+            <a href="#settings-masters">マスタ管理</a>
+            <a href="#settings-holidays">休日カレンダー</a>
+            <a href="#settings-display">表示設定</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("<div id='settings-masters'></div>", unsafe_allow_html=True)
     st.markdown("### マスタ管理")
 
     def render_master_editor(label: str, key: str) -> pd.DataFrame:
@@ -1698,15 +1990,65 @@ def render_settings_tab(masters: Dict[str, List[str]]) -> None:
                 st.success(f"{label}を読み込みました。保存ボタンで確定してください。")
             except Exception as exc:
                 st.error(f"{label}の取り込みに失敗しました: {exc}")
+        controls = st.columns([1.2, 1, 3])
+        modal_flag = f"{key}_show_modal"
+        draft_key = f"{key}_draft"
+        if controls[0].button(f"＋ {label}を追加", key=f"{key}_add"):
+            st.session_state[modal_flag] = True
+        draft_exists = bool(st.session_state.get(draft_key))
+        if controls[1].button("下書きを開く", key=f"{key}_open_draft", disabled=not draft_exists) and draft_exists:
+            st.session_state[modal_flag] = True
+        controls[2].markdown(
+            "<div class='quick-hint'>新規追加はフォームから行い、最後に設定保存ボタンで確定します。</div>",
+            unsafe_allow_html=True,
+        )
+
         entries = normalize_master_entries(masters.get(key, []))
         masters[key] = entries
         base_df = pd.DataFrame(entries)
         if base_df.empty:
             base_df = pd.DataFrame({"name": [], "active": []})
         base_df["active"] = base_df.get("active", True)
+        if st.session_state.get(modal_flag):
+            draft = st.session_state.get(draft_key, {"name": "", "active": True})
+            with st.modal(f"{label}を新規追加", key=f"{key}_modal"):
+                with st.form(f"{key}_form"):
+                    name_value = st.text_input("* 名称", value=draft.get("name", ""))
+                    active_value = st.checkbox("有効", value=bool(draft.get("active", True)))
+                    modal_cols = st.columns([1, 1, 2])
+                    submit_new = modal_cols[0].form_submit_button("登録", type="primary")
+                    submit_draft = modal_cols[1].form_submit_button("下書きを保存")
+                    cancel_modal = modal_cols[2].form_submit_button("閉じる")
+
+                    if submit_draft:
+                        st.session_state[draft_key] = {"name": name_value, "active": active_value}
+                        st.toast("下書きを保存しました。", icon="📝")
+
+                    if cancel_modal:
+                        st.session_state[modal_flag] = False
+                        st.experimental_rerun()
+
+                    if submit_new:
+                        errors: List[str] = []
+                        cleaned = name_value.strip()
+                        if not cleaned:
+                            errors.append("名称は必須です。")
+                        elif cleaned in [entry["name"] for entry in entries]:
+                            errors.append("同じ名称が既に登録されています。")
+                        if errors:
+                            for msg in errors:
+                                st.error(msg)
+                        else:
+                            entries.append({"name": cleaned, "active": active_value})
+                            masters[key] = entries
+                            st.session_state.pop(draft_key, None)
+                            st.session_state[modal_flag] = False
+                            st.success(f"{label}を追加しました。設定保存で反映されます。")
+                            st.experimental_rerun()
+
         editor = st.data_editor(
             base_df,
-            num_rows="dynamic",
+            num_rows="fixed",
             hide_index=True,
             column_config={
                 "name": st.column_config.TextColumn("名称"),
@@ -1721,10 +2063,12 @@ def render_settings_tab(masters: Dict[str, List[str]]) -> None:
     categories_df = render_master_editor("工種", "categories")
     managers_df = render_master_editor("担当者", "managers")
 
+    st.markdown("<div id='settings-holidays'></div>", unsafe_allow_html=True)
     st.markdown("### 休日カレンダー")
     holidays_df = pd.DataFrame({"休日": masters.get("holidays", [])})
     holidays_edit = st.data_editor(holidays_df, num_rows="dynamic", hide_index=True)
 
+    st.markdown("<div id='settings-display'></div>", unsafe_allow_html=True)
     st.markdown("### 表示設定")
     currency_format = st.text_input("通貨フォーマット", masters.get("currency_format", "#,###"))
     decimal_places = st.number_input("小数点以下桁数", min_value=0, max_value=4, value=int(masters.get("decimal_places", 0)))
@@ -1779,6 +2123,7 @@ def main() -> None:
     st.session_state["monthly"] = monthly_df
 
     render_page_header(filters.fiscal_year, fiscal_range)
+    render_quick_actions()
 
     export_placeholder = st.session_state.get("export_placeholder")
     export_target = st.session_state.get("export_target", "案件データ")
@@ -1803,9 +2148,29 @@ def main() -> None:
             mime=mime,
         )
 
-    tabs = st.tabs(["タイムライン", "案件一覧", "集計/分析", "設定"])
+    tab_labels = ["タイムライン", "案件一覧", "集計/分析", "設定"]
+    if "main_tabs" not in st.session_state:
+        st.session_state["main_tabs"] = tab_labels[0]
+    selected_tab = st.radio(
+        "表示タブ",
+        tab_labels,
+        horizontal=True,
+        key="main_tabs",
+        label_visibility="collapsed",
+    )
 
-    with tabs[0]:
+    if selected_tab == "設定":
+        if "sidebar_prev" not in st.session_state:
+            st.session_state["sidebar_prev"] = st.session_state.get("sidebar_visible", True)
+        st.session_state["sidebar_visible"] = False
+    else:
+        if "sidebar_prev" in st.session_state:
+            st.session_state["sidebar_visible"] = st.session_state.pop("sidebar_prev")
+
+    st.divider()
+
+    if selected_tab == "タイムライン":
+        st.markdown("<div id='timeline-section'></div>", unsafe_allow_html=True)
         st.subheader("タイムライン")
         timeline_fig = create_timeline(enriched_filtered_df, filters, fiscal_range)
         st.plotly_chart(timeline_fig, use_container_width=True)
@@ -1830,14 +2195,27 @@ def main() -> None:
             res_col1.dataframe(manager_summary, use_container_width=True)
             res_col2.dataframe(partner_summary, use_container_width=True)
 
-    with tabs[1]:
-        render_projects_tab(projects_df, filtered_df)
+    elif selected_tab == "案件一覧":
+        st.markdown("<div id='project-section'></div>", unsafe_allow_html=True)
+        render_projects_tab(projects_df, filtered_df, masters)
 
-    with tabs[2]:
+    elif selected_tab == "集計/分析":
+        st.markdown("<div id='analysis-section'></div>", unsafe_allow_html=True)
         render_summary_tab(enriched_filtered_df, monthly_df)
 
-    with tabs[3]:
+    else:
         render_settings_tab(masters)
+
+    st.markdown("<div id='onboarding-guide'></div>", unsafe_allow_html=True)
+    with st.expander("クイックチュートリアル / オンボーディング", expanded=False):
+        st.markdown(
+            """
+            1. 左上の「☰ フィルタ」で事業年度や期間を切り替えます。
+            2. 「＋ 新規案件を登録」から案件フォームを開き、必須項目を入力して保存します。
+            3. タイムラインで進捗とリスクを把握し、集計タブで粗利やキャッシュを確認してください。
+            4. 設定タブから得意先・工種などのマスタや休日を整備できます。
+            """
+        )
 
 
 if __name__ == "__main__":
