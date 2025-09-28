@@ -1435,6 +1435,7 @@ def apply_brand_theme() -> None:
             align-items: center;
             gap: 0.45rem;
             transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+            font-weight: 600;
         }}
 
         [data-testid="stRadio"] div[role="radiogroup"] > label:hover {{
@@ -1445,16 +1446,21 @@ def apply_brand_theme() -> None:
         }}
 
         [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) {{
-            background: linear-gradient(135deg, rgba(77, 126, 168, 0.22), rgba(11, 31, 58, 0.15));
-            border-color: rgba(11, 31, 58, 0.4);
-            color: var(--brand-navy) !important;
-            font-weight: 600;
-            box-shadow: 0 10px 22px rgba(11, 31, 58, 0.18);
+            background: linear-gradient(135deg, rgba(30, 76, 156, 0.88), rgba(11, 31, 58, 0.92));
+            border-color: rgba(11, 31, 58, 0.65);
+            color: var(--text-invert) !important;
+            box-shadow: 0 10px 22px rgba(11, 31, 58, 0.22);
         }}
 
-        [data-testid="stRadio"] div[role="radiogroup"] > label div[data-testid="stMarkdownContainer"] p {{
+        [data-testid="stRadio"] div[role="radiogroup"] > label div[data-testid="stMarkdownContainer"] p,
+        [data-testid="stRadio"] div[role="radiogroup"] > label div[data-testid="stMarkdownContainer"] span {{
             color: inherit !important;
             margin: 0;
+        }}
+
+        [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) div[data-testid="stMarkdownContainer"] p,
+        [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) div[data-testid="stMarkdownContainer"] span {{
+            color: var(--text-invert) !important;
         }}
 
         .quick-actions {{
