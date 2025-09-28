@@ -2818,14 +2818,15 @@ def render_quick_project_form(df: pd.DataFrame, masters: Dict[str, List[str]]) -
 
 
 def prepare_export(df: Optional[pd.DataFrame], file_format: str = "CSV"):
+    """Export helper that returns bytes suitable for download buttons."""
     if df is None:
-        return b"" if file_format == "Excel" else ""
+        return b""
     if file_format == "Excel":
         buffer = BytesIO()
         df.to_excel(buffer, index=False)
         buffer.seek(0)
         return buffer.getvalue()
-    return df.to_csv(index=False)
+    return df.to_csv(index=False, line_terminator="\r\n").encode("utf-8-sig")
 
 
 def load_uploaded_dataframe(uploaded) -> pd.DataFrame:
