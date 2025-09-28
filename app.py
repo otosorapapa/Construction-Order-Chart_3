@@ -17,7 +17,51 @@ MASTERS_JSON = os.path.join(DATA_DIR, "masters.json")
 FISCAL_START_MONTH = 7
 DEFAULT_FISCAL_YEAR = 2025
 FISCAL_YEAR_OPTIONS = list(range(2024, 2029))
-DEFAULT_BAR_COLOR = "#E67E22"
+
+BRAND_COLORS = {
+    "navy": "#0B1F3A",
+    "slate": "#2F3C48",
+    "mist": "#F4F6FA",
+    "cloud": "#E8ECF3",
+    "gold": "#C9A227",
+    "sky": "#4D7EA8",
+    "teal": "#6AA5A9",
+    "crimson": "#B03038",
+}
+
+BRAND_COLORWAY = [
+    BRAND_COLORS["navy"],
+    BRAND_COLORS["sky"],
+    "#8FAACF",
+    BRAND_COLORS["teal"],
+    BRAND_COLORS["gold"],
+    "#7B8C9E",
+]
+
+BRAND_TEMPLATE = go.layout.Template(
+    layout=dict(
+        font=dict(
+            family="'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif",
+            color=BRAND_COLORS["slate"],
+        ),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        hoverlabel=dict(font=dict(family="'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif")),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor=BRAND_COLORS["cloud"],
+            borderwidth=1,
+        ),
+        colorway=BRAND_COLORWAY,
+    )
+)
+
+DEFAULT_BAR_COLOR = BRAND_COLORS["navy"]
 
 PROJECT_NUMERIC_COLUMNS = [
     "受注予定額",
@@ -385,9 +429,27 @@ def apply_filters(df: pd.DataFrame, filters: FilterState) -> pd.DataFrame:
 
 def generate_color_map(values: pd.Series, key: str, default_color: str) -> Dict[str, str]:
     palettes = {
-        "ステータス": ["#E67E22", "#3498DB", "#27AE60", "#9B59B6", "#F39C12", "#95A5A6"],
-        "工種": ["#D35400", "#1ABC9C", "#8E44AD", "#2ECC71", "#F1C40F"],
-        "元請区分": ["#E67E22", "#F39C12", "#E74C3C", "#9B59B6"],
+        "ステータス": [
+            BRAND_COLORS["navy"],
+            BRAND_COLORS["sky"],
+            "#8FAACF",
+            BRAND_COLORS["teal"],
+            BRAND_COLORS["gold"],
+            "#7B8C9E",
+        ],
+        "工種": [
+            BRAND_COLORS["navy"],
+            BRAND_COLORS["gold"],
+            BRAND_COLORS["sky"],
+            BRAND_COLORS["teal"],
+            "#9AA8BC",
+        ],
+        "元請区分": [
+            BRAND_COLORS["navy"],
+            BRAND_COLORS["sky"],
+            BRAND_COLORS["gold"],
+            BRAND_COLORS["teal"],
+        ],
     }
     palette = palettes.get(key, [default_color])
     unique_vals = [v for v in values.dropna().unique().tolist() if v != ""]
@@ -519,6 +581,53 @@ def summarize_resources(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     return manager, partner
 
 
+def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
+    if df.empty:
+        return df.style
+
+    def highlight(row: pd.Series) -> List[str]:
+        styles: List[str] = []
+        for col in row.index:
+            style = ""
+            if col == "リスクレベル":
+                if row[col] == "高":
+                    style = "color: #B03038; font-weight: 600;"
+                elif row[col] == "中":
+                    style = "color: #C9A227; font-weight: 600;"
+            if col == "遅延日数" and row[col] > 0:
+                style = "color: #B03038; font-weight: 600;"
+            if col == "進捗差異" and row[col] < -10:
+                style = "color: #B03038; font-weight: 600;"
+            if col == "予算乖離額" and row[col] > 0:
+                style = "color: #B03038; font-weight: 600;"
+            styles.append(style)
+        return styles
+
+    return (
+        df.style.format(
+            {
+                "予算乖離額": "{:+,.0f} 円",
+                "進捗差異": "{:+.1f} %",
+                "遅延日数": lambda v: f"{int(v)}日",
+            }
+        )
+        .apply(highlight, axis=1)
+        .set_table_styles(
+            [
+                {
+                    "selector": "th",
+                    "props": [
+                        ("background-color", "#F4F6FA"),
+                        ("color", "#2F3C48"),
+                        ("font-weight", "600"),
+                        ("border-bottom", "1px solid #E0E6F0"),
+                    ],
+                }
+            ]
+        )
+    )
+
+
 
 
 def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[date, date]) -> go.Figure:
@@ -527,8 +636,10 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         fig.update_layout(
             xaxis_title="期間",
             yaxis_title="案件名",
-            template="plotly_white",
+            template=BRAND_TEMPLATE,
             height=500,
+            plot_bgcolor="white",
+            paper_bgcolor="white",
         )
         return fig
 
@@ -563,7 +674,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             showlegend = True
         bar_color = color_map.get(raw_value, filters.bar_color)
         risk_level = row.get("リスクレベル", "低")
-        border_color = {"高": "#E74C3C", "中": "#F39C12"}.get(risk_level)
+        border_color = {"高": BRAND_COLORS["crimson"], "中": BRAND_COLORS["gold"]}.get(risk_level)
         fig.add_trace(
             go.Bar(
                 x=[(pd.to_datetime(row["竣工日"]) - pd.to_datetime(row["着工日"]) + pd.Timedelta(days=1)).days],
@@ -572,7 +683,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
                 orientation="h",
                 marker=dict(
                     color=bar_color,
-                    line=dict(color=border_color or bar_color, width=3 if border_color else 1),
+                    line=dict(color=border_color or "rgba(12,31,58,0.3)", width=3 if border_color else 1),
                 ),
                 hovertemplate=hover_text,
                 name=legend_value,
@@ -590,7 +701,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
                 y=row["案件名"],
                 text=annotation_symbol,
                 showarrow=False,
-                font=dict(size=16, color=border_color or "#2C3E50"),
+                font=dict(size=16, color=border_color or BRAND_COLORS["slate"]),
             )
 
     start, end = fiscal_range
@@ -598,7 +709,9 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
     label_font = {"高": 14, "中": 12, "低": 10}
     fig.update_layout(
         barmode="stack",
-        template="plotly_white",
+        template=BRAND_TEMPLATE,
+        plot_bgcolor="white",
+        paper_bgcolor="white",
         height=max(400, 40 * len(df) + 200),
         title=f"{filters.fiscal_year}年度 タイムライン",
         xaxis=dict(
@@ -608,8 +721,15 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             tickmode="array",
             tickvals=month_starts,
             ticktext=[d.strftime("%m") for d in month_starts],
+            gridcolor=BRAND_COLORS["cloud"],
+            linecolor=BRAND_COLORS["cloud"],
         ),
-        yaxis=dict(autorange="reversed", tickfont=dict(size=label_font.get(filters.label_density, 12))),
+        yaxis=dict(
+            autorange="reversed",
+            tickfont=dict(size=label_font.get(filters.label_density, 12)),
+            gridcolor="rgba(0,0,0,0)",
+        ),
+        margin=dict(t=80, b=40, l=10, r=10, pad=10),
     )
 
     for month in range(12):
@@ -618,7 +738,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             x=line_date,
             line_width=1,
             line_dash="dash",
-            line_color="#BDC3C7",
+            line_color=BRAND_COLORS["cloud"],
             opacity=0.6,
         )
     today = pd.Timestamp(date.today())
@@ -626,7 +746,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         fig.add_vline(
             x=today,
             line_width=2,
-            line_color="#E74C3C",
+            line_color=BRAND_COLORS["crimson"],
         )
         fig.add_annotation(
             x=today,
@@ -637,8 +757,8 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             showarrow=False,
             xanchor="left",
             yanchor="bottom",
-            font=dict(color="#E74C3C"),
-            bgcolor="rgba(255, 255, 255, 0.8)",
+            font=dict(color=BRAND_COLORS["crimson"]),
+            bgcolor="rgba(255, 255, 255, 0.85)",
             borderpad=4,
         )
     fig.update_yaxes(tickmode="linear")
@@ -865,6 +985,217 @@ def render_sidebar(df: pd.DataFrame, masters: Dict[str, List[str]]) -> FilterSta
         label_density=label_density,
         bar_color=bar_color,
     )
+
+
+def toggle_sidebar_visibility() -> None:
+    st.session_state["sidebar_visible"] = not st.session_state.get("sidebar_visible", True)
+
+
+def apply_brand_theme() -> None:
+    sidebar_visible = st.session_state.get("sidebar_visible", True)
+    sidebar_transform = "translateX(0)" if sidebar_visible else "translateX(-108%)"
+    sidebar_shadow = "0 24px 48px rgba(11, 31, 58, 0.15)" if sidebar_visible else "none"
+    st.markdown(
+        f"""
+        <style>
+        :root {{
+            --brand-navy: {BRAND_COLORS['navy']};
+            --brand-slate: {BRAND_COLORS['slate']};
+            --brand-mist: {BRAND_COLORS['mist']};
+            --brand-cloud: {BRAND_COLORS['cloud']};
+            --brand-gold: {BRAND_COLORS['gold']};
+            --brand-sky: {BRAND_COLORS['sky']};
+            --brand-crimson: {BRAND_COLORS['crimson']};
+            --sidebar-transform: {sidebar_transform};
+            --sidebar-shadow: {sidebar_shadow};
+        }}
+
+        html, body, [data-testid="stAppViewContainer"], [data-testid="block-container"] {{
+            background-color: var(--brand-mist) !important;
+            color: var(--brand-slate);
+            font-family: 'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif;
+        }}
+
+        [data-testid="block-container"] {{
+            padding-top: 1.5rem;
+            padding-bottom: 3rem;
+            max-width: 1200px;
+        }}
+
+        h1, h2, h3, h4 {{
+            font-family: 'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif;
+            color: var(--brand-navy);
+            letter-spacing: 0.01em;
+        }}
+
+        .page-title {{
+            font-size: 2.1rem;
+            font-weight: 600;
+            margin-bottom: 0.1rem;
+        }}
+
+        .page-subtitle {{
+            font-size: 0.95rem;
+            color: #60738a;
+            margin-bottom: 1.5rem;
+        }}
+
+        .kpi-card {{
+            background: white;
+            border-radius: 18px;
+            padding: 1.2rem 1.4rem;
+            box-shadow: 0 12px 32px rgba(11, 31, 58, 0.08);
+            border: 1px solid rgba(12, 31, 58, 0.06);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            height: 100%;
+        }}
+
+        .kpi-card.alert {{
+            border-color: rgba(176, 48, 56, 0.3);
+            box-shadow: 0 16px 40px rgba(176, 48, 56, 0.12);
+        }}
+
+        .kpi-icon {{
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            font-size: 1.6rem;
+            background: rgba(77, 126, 168, 0.1);
+            color: var(--brand-sky);
+        }}
+
+        .kpi-title {{
+            font-size: 0.9rem;
+            color: #5b6c82;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }}
+
+        .kpi-value {{
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: var(--brand-navy);
+            margin: 0.2rem 0;
+        }}
+
+        .kpi-subtitle {{
+            font-size: 0.85rem;
+            color: #7a889d;
+        }}
+
+        .fiscal-pill {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: white;
+            border-radius: 999px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.85rem;
+            color: var(--brand-slate);
+            box-shadow: inset 0 0 0 1px rgba(11, 31, 58, 0.08);
+        }}
+
+        .sidebar-toggle {{
+            display: none;
+            margin-bottom: 0.5rem;
+        }}
+
+        [data-testid="stSidebar"] {{
+            background: white;
+            border-right: 1px solid var(--brand-cloud);
+            padding: 1.5rem 1.4rem 3rem;
+            width: 320px;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            box-shadow: var(--sidebar-shadow);
+        }}
+
+        [data-testid="stSidebar"] .stRadio > label {{
+            font-weight: 500;
+            color: var(--brand-slate);
+        }}
+
+        [data-testid="stSidebar"] .stMultiSelect, [data-testid="stSidebar"] .stSelectbox, [data-testid="stSidebar"] .stSlider {{
+            margin-bottom: 1rem;
+        }}
+
+        [data-testid="stSidebar"]::-webkit-scrollbar {{ width: 6px; }}
+        [data-testid="stSidebar"]::-webkit-scrollbar-thumb {{
+            background: rgba(91, 108, 130, 0.25);
+            border-radius: 3px;
+        }}
+
+        @media (max-width: 1200px) {{
+            [data-testid="stSidebar"] {{
+                position: fixed;
+                inset: 0 auto 0 0;
+                z-index: 1000;
+                transform: var(--sidebar-transform);
+                width: min(88vw, 320px);
+            }}
+
+            .sidebar-toggle {{
+                display: inline-flex !important;
+            }}
+        }}
+
+        .sidebar-toggle button {{
+            width: 100%;
+            border-radius: 999px !important;
+            background: var(--brand-navy) !important;
+            color: white !important;
+            border: none;
+            box-shadow: 0 10px 24px rgba(11, 31, 58, 0.18);
+        }}
+
+        .sidebar-toggle button:hover {{
+            background: #10284f !important;
+        }}
+
+        div[data-testid="stMarkdownContainer"] .risk-high {{
+            color: var(--brand-crimson);
+            font-weight: 600;
+        }}
+
+        div[data-testid="stMarkdownContainer"] .risk-medium {{
+            color: var(--brand-gold);
+            font-weight: 600;
+        }}
+
+        .element-container:has(.stDataFrame) {{
+            border-radius: 18px;
+            background: white;
+            padding: 0.6rem 0.6rem 0.2rem;
+            box-shadow: 0 8px 24px rgba(11, 31, 58, 0.05);
+            margin-bottom: 1.2rem;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_page_header(fiscal_year: int, fiscal_range: Tuple[date, date]) -> None:
+    header_cols = st.columns([1.1, 4, 2])
+    with header_cols[0]:
+        st.markdown('<div class="sidebar-toggle">', unsafe_allow_html=True)
+        st.button("☰ フィルタ", key="sidebar_toggle_button", on_click=toggle_sidebar_visibility)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with header_cols[1]:
+        st.markdown('<div class="page-title">工事受注ダッシュボード</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="page-subtitle">案件状況・粗利・キャッシュを俯瞰し迅速な意思決定を支援します</div>',
+            unsafe_allow_html=True,
+        )
+    with header_cols[2]:
+        fiscal_from, fiscal_to = fiscal_range
+        st.markdown(
+            f"<div style='display:flex;justify-content:flex-end'><span class='fiscal-pill'>FY {fiscal_year} : {fiscal_from:%Y.%m} - {fiscal_to:%Y.%m}</span></div>",
+            unsafe_allow_html=True,
+        )
 
 
 def prepare_export(df: Optional[pd.DataFrame], file_format: str = "CSV"):
@@ -1127,17 +1458,74 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
     cumulative_cash = monthly["累計キャッシュフロー"].iloc[-1] if not monthly.empty else 0
 
     st.markdown("### KPIサマリー")
-    kpi_cols = st.columns(4)
-    kpi_cols[0].metric("総粗利額", f"{gross_profit:,.0f} 円", f"粗利率 {gross_margin:,.1f}%")
-    kpi_cols[1].metric("受注差異", f"{order_diff:,.0f} 円")
-    kpi_cols[2].metric("完成工事高", f"{completion_value:,.0f} 円")
-    kpi_cols[3].metric("予算超過案件", f"{budget_over_count} 件")
+    kpi_data = [
+        {
+            "icon": "💰",
+            "title": "Gross Profit",
+            "value": f"{gross_profit:,.0f} 円",
+            "subtitle": f"粗利率 {gross_margin:,.1f}%",
+        },
+        {
+            "icon": "📦",
+            "title": "Order Delta",
+            "value": f"{order_diff:,.0f} 円",
+            "subtitle": "受注金額 - 受注予定額",
+        },
+        {
+            "icon": "🏗️",
+            "title": "Completion Value",
+            "value": f"{completion_value:,.0f} 円",
+            "subtitle": f"完成工事高 / 累計CF {cumulative_cash:,.0f} 円",
+        },
+        {
+            "icon": "⚠️" if budget_over_count else "✅",
+            "title": "Budget Alerts",
+            "value": f"{budget_over_count} 件",
+            "subtitle": "予算超過案件数",
+            "alert": budget_over_count > 0,
+        },
+    ]
+    kpi_cols = st.columns(len(kpi_data))
+    for col, card in zip(kpi_cols, kpi_data):
+        alert_class = " alert" if card.get("alert") else ""
+        col.markdown(
+            f"""
+            <div class="kpi-card{alert_class}">
+                <div class="kpi-icon">{card['icon']}</div>
+                <div>
+                    <div class="kpi-title">{card['title']}</div>
+                    <div class="kpi-value">{card['value']}</div>
+                    <div class="kpi-subtitle">{card['subtitle']}</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown("### 月次推移")
     trend_fig = go.Figure()
-    trend_fig.add_bar(x=monthly["年月"], y=monthly["受注金額"], name="受注金額")
-    trend_fig.add_bar(x=monthly["年月"], y=monthly["予定原価"], name="予定原価")
-    trend_fig.add_trace(go.Scatter(x=monthly["年月"], y=monthly["粗利"], mode="lines+markers", name="粗利"))
+    trend_fig.add_bar(
+        x=monthly["年月"],
+        y=monthly["受注金額"],
+        name="受注金額",
+        marker=dict(color=BRAND_COLORS["navy"], line=dict(width=0)),
+    )
+    trend_fig.add_bar(
+        x=monthly["年月"],
+        y=monthly["予定原価"],
+        name="予定原価",
+        marker=dict(color=BRAND_COLORS["sky"], line=dict(width=0)),
+    )
+    trend_fig.add_trace(
+        go.Scatter(
+            x=monthly["年月"],
+            y=monthly["粗利"],
+            mode="lines+markers",
+            name="粗利",
+            marker=dict(color=BRAND_COLORS["gold"], size=8),
+            line=dict(color=BRAND_COLORS["gold"], width=3),
+        )
+    )
     trend_fig.add_trace(
         go.Scatter(
             x=monthly["年月"],
@@ -1145,21 +1533,35 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             mode="lines",
             name="粗利率",
             yaxis="y2",
+            line=dict(color=BRAND_COLORS["teal"], width=2, dash="dot"),
         )
     )
     trend_fig.update_layout(
-        template="plotly_white",
+        template=BRAND_TEMPLATE,
         barmode="group",
-        yaxis=dict(title="金額"),
-        yaxis2=dict(title="粗利率 (%)", overlaying="y", side="right"),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        yaxis=dict(title="金額", gridcolor=BRAND_COLORS["cloud"], zerolinecolor=BRAND_COLORS["cloud"]),
+        yaxis2=dict(title="粗利率 (%)", overlaying="y", side="right", gridcolor="rgba(0,0,0,0)"),
         height=480,
+        margin=dict(t=60, b=40, l=10, r=10, pad=10),
     )
     st.plotly_chart(trend_fig, use_container_width=True)
 
     st.markdown("### キャッシュフロー見通し")
     cash_fig = go.Figure()
-    cash_fig.add_bar(x=monthly["年月"], y=monthly["キャッシュイン"], name="キャッシュイン")
-    cash_fig.add_bar(x=monthly["年月"], y=-monthly["キャッシュアウト"], name="キャッシュアウト")
+    cash_fig.add_bar(
+        x=monthly["年月"],
+        y=monthly["キャッシュイン"],
+        name="キャッシュイン",
+        marker=dict(color=BRAND_COLORS["teal"], line=dict(width=0)),
+    )
+    cash_fig.add_bar(
+        x=monthly["年月"],
+        y=-monthly["キャッシュアウト"],
+        name="キャッシュアウト",
+        marker=dict(color="#8FAACF", line=dict(width=0)),
+    )
     cash_fig.add_trace(
         go.Scatter(
             x=monthly["年月"],
@@ -1167,14 +1569,19 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             mode="lines+markers",
             name="累計キャッシュフロー",
             yaxis="y2",
+            marker=dict(color=BRAND_COLORS["navy"], size=7),
+            line=dict(color=BRAND_COLORS["navy"], width=3),
         )
     )
     cash_fig.update_layout(
-        template="plotly_white",
+        template=BRAND_TEMPLATE,
         barmode="relative",
-        yaxis=dict(title="キャッシュフロー"),
-        yaxis2=dict(title="累計 (円)", overlaying="y", side="right"),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        yaxis=dict(title="キャッシュフロー", gridcolor=BRAND_COLORS["cloud"], zerolinecolor=BRAND_COLORS["cloud"]),
+        yaxis2=dict(title="累計 (円)", overlaying="y", side="right", gridcolor="rgba(0,0,0,0)"),
         height=420,
+        margin=dict(t=60, b=40, l=10, r=10, pad=10),
     )
     st.plotly_chart(cash_fig, use_container_width=True)
 
@@ -1183,22 +1590,66 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         if enriched.empty:
             st.info("対象データがありません。")
         else:
-            pie1 = go.Figure(data=[go.Pie(labels=enriched["工種"], values=enriched["受注金額"], hole=0.3)])
-            pie1.update_layout(title="工種別構成比")
+            pie1 = go.Figure(
+                data=[
+                    go.Pie(
+                        labels=enriched["工種"],
+                        values=enriched["受注金額"],
+                        hole=0.45,
+                        marker=dict(colors=BRAND_COLORWAY, line=dict(color="white", width=2)),
+                        textinfo="label+percent",
+                    )
+                ]
+            )
+            pie1.update_layout(
+                title="工種別構成比",
+                template=BRAND_TEMPLATE,
+                showlegend=False,
+            )
             st.plotly_chart(pie1, use_container_width=True)
     with col2:
         if enriched.empty:
             st.info("対象データがありません。")
         else:
-            pie2 = go.Figure(data=[go.Pie(labels=enriched["得意先"], values=enriched["受注金額"], hole=0.3)])
-            pie2.update_layout(title="得意先別構成比")
+            pie2 = go.Figure(
+                data=[
+                    go.Pie(
+                        labels=enriched["得意先"],
+                        values=enriched["受注金額"],
+                        hole=0.45,
+                        marker=dict(colors=BRAND_COLORWAY, line=dict(color="white", width=2)),
+                        textinfo="label+percent",
+                    )
+                ]
+            )
+            pie2.update_layout(
+                title="得意先別構成比",
+                template=BRAND_TEMPLATE,
+                showlegend=False,
+            )
             st.plotly_chart(pie2, use_container_width=True)
 
     if enriched.empty:
         st.info("粗利率の分布を表示するデータがありません。")
     else:
-        hist = go.Figure(data=[go.Histogram(x=enriched["粗利率"], nbinsx=10)])
-        hist.update_layout(title="粗利率ヒストグラム", template="plotly_white")
+        hist = go.Figure(
+            data=[
+                go.Histogram(
+                    x=enriched["粗利率"],
+                    nbinsx=10,
+                    marker=dict(color=BRAND_COLORS["navy"], opacity=0.75),
+                )
+            ]
+        )
+        hist.update_layout(
+            title="粗利率ヒストグラム",
+            template=BRAND_TEMPLATE,
+            bargap=0.1,
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            xaxis=dict(title="粗利率", gridcolor=BRAND_COLORS["cloud"]),
+            yaxis=dict(title="件数", gridcolor=BRAND_COLORS["cloud"]),
+        )
         st.plotly_chart(hist, use_container_width=True)
 
     if not enriched.empty:
@@ -1215,10 +1666,20 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         st.dataframe(category_summary, use_container_width=True)
 
     st.markdown("### 月次サマリー")
-    st.dataframe(
-        monthly.assign(年月=monthly["年月"].dt.strftime("%Y-%m")),
-        use_container_width=True,
+    monthly_view = monthly.assign(年月=monthly["年月"].dt.strftime("%Y-%m")).style.format(
+        {
+            "受注金額": "{:,.0f}",
+            "予定原価": "{:,.0f}",
+            "粗利": "{:,.0f}",
+            "粗利率": "{:.1f}",
+            "延べ人数": "{:.1f}",
+            "キャッシュイン": "{:,.0f}",
+            "キャッシュアウト": "{:,.0f}",
+            "キャッシュフロー": "{:,.0f}",
+            "累計キャッシュフロー": "{:,.0f}",
+        }
     )
+    st.dataframe(monthly_view, use_container_width=True)
 
 
 def render_settings_tab(masters: Dict[str, List[str]]) -> None:
@@ -1298,6 +1759,9 @@ def render_settings_tab(masters: Dict[str, List[str]]) -> None:
 
 def main() -> None:
     st.set_page_config(page_title="工事受注案件 予定表", layout="wide")
+    if "sidebar_visible" not in st.session_state:
+        st.session_state["sidebar_visible"] = True
+    apply_brand_theme()
     ensure_data_files()
     masters = load_masters()
 
@@ -1313,6 +1777,8 @@ def main() -> None:
     enriched_filtered_df = enrich_projects(filtered_df) if not filtered_df.empty else filtered_df
     monthly_df = compute_monthly_aggregation(filtered_df, fiscal_range)
     st.session_state["monthly"] = monthly_df
+
+    render_page_header(filters.fiscal_year, fiscal_range)
 
     export_placeholder = st.session_state.get("export_placeholder")
     export_target = st.session_state.get("export_target", "案件データ")
@@ -1355,10 +1821,8 @@ def main() -> None:
             ]]
             risk_order = {"高": 3, "中": 2, "低": 1}
             risk_table = risk_table.assign(優先度=risk_table["リスクレベル"].map(risk_order).fillna(0))
-            st.dataframe(
-                risk_table.sort_values(["優先度", "予算乖離額"], ascending=[False, False]).drop(columns="優先度"),
-                use_container_width=True,
-            )
+            sorted_risk = risk_table.sort_values(["優先度", "予算乖離額"], ascending=[False, False]).drop(columns="優先度")
+            st.dataframe(style_risk_table(sorted_risk), use_container_width=True, height=360)
 
             st.markdown("### リソース稼働状況")
             manager_summary, partner_summary = summarize_resources(enriched_filtered_df)
