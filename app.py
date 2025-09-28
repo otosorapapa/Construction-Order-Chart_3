@@ -1912,7 +1912,12 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
         st.info("条件に合致する案件がありません。フィルタを変更するか、新規行を追加してください。")
     display_df.reset_index(drop=True, inplace=True)
 
-    alert_df = display_df[display_df.get("予算超過", False) == True]
+    alert_series = (
+        display_df["予算超過"]
+        if "予算超過" in display_df.columns
+        else pd.Series(False, index=display_df.index)
+    )
+    alert_df = display_df[alert_series == True]
     if not alert_df.empty:
         st.warning("予算超過となっている案件があります。詳細を確認してください。")
         st.dataframe(
