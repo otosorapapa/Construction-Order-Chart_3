@@ -283,14 +283,25 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             line_color="#BDC3C7",
             opacity=0.6,
         )
-    today = pd.to_datetime(date.today())
+    today = pd.Timestamp(date.today())
     if start <= today.date() <= end:
         fig.add_vline(
             x=today,
             line_width=2,
             line_color="#E74C3C",
-            annotation_text="今日",
-            annotation_position="top left",
+        )
+        fig.add_annotation(
+            x=today,
+            xref="x",
+            y=1,
+            yref="paper",
+            text="今日",
+            showarrow=False,
+            xanchor="left",
+            yanchor="bottom",
+            font=dict(color="#E74C3C"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+            borderpad=4,
         )
     fig.update_yaxes(tickmode="linear")
     return fig
