@@ -2149,14 +2149,14 @@ def apply_plotly_theme(fig: go.Figure) -> go.Figure:
     )
     fig.update_xaxes(
         tickfont=dict(color=theme["text_strong"]),
-        titlefont=dict(color=theme["text_strong"]),
+        title=dict(font=dict(color=theme["text_strong"])),
         gridcolor=theme["chart_grid"],
         zerolinecolor=theme["chart_grid"],
         linecolor=theme["chart_grid"],
     )
     fig.update_yaxes(
         tickfont=dict(color=theme["text_strong"]),
-        titlefont=dict(color=theme["text_strong"]),
+        title=dict(font=dict(color=theme["text_strong"])),
         gridcolor=theme["chart_grid"],
         zerolinecolor=theme["chart_grid"],
         linecolor=theme["chart_grid"],
