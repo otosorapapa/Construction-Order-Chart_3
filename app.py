@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime
 from io import BytesIO
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -697,6 +697,40 @@ def summarize_resources(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         .sort_values("必要人数", ascending=False)
     )
     return manager, partner
+
+
+def style_table_numbers(
+    df: pd.DataFrame,
+    currency_columns: Optional[List[str]] = None,
+    percentage_columns: Optional[List[str]] = None,
+    decimal_columns: Optional[List[str]] = None,
+) -> Union[pd.DataFrame, "pd.io.formats.style.Styler"]:
+    """Format numeric columns with thousand separators and optional units."""
+
+    if df.empty:
+        return df
+
+    formatters: Dict[str, object] = {}
+
+    if currency_columns:
+        for col in currency_columns:
+            if col in df.columns:
+                formatters[col] = "{:,.0f}"
+
+    if percentage_columns:
+        for col in percentage_columns:
+            if col in df.columns:
+                formatters[col] = "{:.1f}%"
+
+    if decimal_columns:
+        for col in decimal_columns:
+            if col in df.columns:
+                formatters[col] = "{:.1f}"
+
+    if not formatters:
+        return df
+
+    return df.style.format(formatters)
 
 
 def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
@@ -2050,8 +2084,9 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
     alert_df = display_df[alert_series == True]
     if not alert_df.empty:
         st.warning("予算超過となっている案件があります。詳細を確認してください。")
+        alert_view = alert_df[["案件名", "予算乖離額", "担当者", "リスクコメント"]]
         st.dataframe(
-            alert_df[["案件名", "予算乖離額", "担当者", "リスクコメント"]],
+            style_table_numbers(alert_view, currency_columns=["予算乖離額"]),
             use_container_width=True,
         )
 
@@ -2510,7 +2545,14 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
     if not enriched.empty:
         st.markdown("### 原価率分析")
         project_ratio = enriched[["案件名", "受注金額", "予定原価", "原価率", "リスクレベル"]]
-        st.dataframe(project_ratio.sort_values("原価率", ascending=False), use_container_width=True)
+        st.dataframe(
+            style_table_numbers(
+                project_ratio.sort_values("原価率", ascending=False),
+                currency_columns=["受注金額", "予定原価"],
+                percentage_columns=["原価率"],
+            ),
+            use_container_width=True,
+        )
 
         category_summary = (
             enriched.groupby("工種")[["受注金額", "予定原価", "粗利額"]]
@@ -2518,7 +2560,14 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             .assign(原価率=lambda x: np.where(x["受注金額"] != 0, x["予定原価"] / x["受注金額"] * 100, 0))
             .reset_index()
         )
-        st.dataframe(category_summary, use_container_width=True)
+        st.dataframe(
+            style_table_numbers(
+                category_summary,
+                currency_columns=["受注金額", "予定原価", "粗利額"],
+                percentage_columns=["原価率"],
+            ),
+            use_container_width=True,
+        )
 
     st.markdown("### 月次サマリー")
     monthly_view = monthly.assign(年月=monthly["年月"].dt.strftime("%Y-%m")).style.format(
