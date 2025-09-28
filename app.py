@@ -1074,16 +1074,20 @@ def create_timeline(
         fig = go.Figure()
         fig.update_layout(
             xaxis=dict(
-                title="期間",
+                title=dict(
+                    text="期間",
+                    font=dict(color=BRAND_COLORS["slate"]),
+                ),
                 tickfont=dict(color=BRAND_COLORS["slate"]),
-                titlefont=dict(color=BRAND_COLORS["slate"]),
                 gridcolor=BRAND_COLORS["cloud"],
                 linecolor=BRAND_COLORS["cloud"],
             ),
             yaxis=dict(
-                title="案件名",
+                title=dict(
+                    text="案件名",
+                    font=dict(color=BRAND_COLORS["slate"]),
+                ),
                 tickfont=dict(color=BRAND_COLORS["slate"]),
-                titlefont=dict(color=BRAND_COLORS["slate"]),
                 gridcolor="rgba(0,0,0,0)",
             ),
             template=get_brand_template(),
@@ -3021,26 +3025,32 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         plot_bgcolor="white",
         paper_bgcolor="white",
         xaxis=dict(
-            title="年月",
+            title=dict(
+                text="年月",
+                font=dict(color=BRAND_COLORS["slate"]),
+            ),
             tickfont=dict(color=BRAND_COLORS["slate"]),
-            titlefont=dict(color=BRAND_COLORS["slate"]),
             gridcolor=BRAND_COLORS["cloud"],
             linecolor=BRAND_COLORS["cloud"],
         ),
         yaxis=dict(
-            title="金額",
+            title=dict(
+                text="金額",
+                font=dict(color=BRAND_COLORS["slate"]),
+            ),
             gridcolor=BRAND_COLORS["cloud"],
             zerolinecolor=BRAND_COLORS["cloud"],
             tickfont=dict(color=BRAND_COLORS["slate"]),
-            titlefont=dict(color=BRAND_COLORS["slate"]),
         ),
         yaxis2=dict(
-            title="粗利率 (%)",
+            title=dict(
+                text="粗利率 (%)",
+                font=dict(color=BRAND_COLORS["slate"]),
+            ),
             overlaying="y",
             side="right",
             gridcolor="rgba(0,0,0,0)",
             tickfont=dict(color=BRAND_COLORS["slate"]),
-            titlefont=dict(color=BRAND_COLORS["slate"]),
         ),
         height=480,
         margin=dict(t=60, b=40, l=10, r=10, pad=10),
@@ -3079,26 +3089,32 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         plot_bgcolor="white",
         paper_bgcolor="white",
         xaxis=dict(
-            title="年月",
+            title=dict(
+                text="年月",
+                font=dict(color=BRAND_COLORS["slate"]),
+            ),
             tickfont=dict(color=BRAND_COLORS["slate"]),
-            titlefont=dict(color=BRAND_COLORS["slate"]),
             gridcolor=BRAND_COLORS["cloud"],
             linecolor=BRAND_COLORS["cloud"],
         ),
         yaxis=dict(
-            title="キャッシュフロー",
+            title=dict(
+                text="キャッシュフロー",
+                font=dict(color=BRAND_COLORS["slate"]),
+            ),
             gridcolor=BRAND_COLORS["cloud"],
             zerolinecolor=BRAND_COLORS["cloud"],
             tickfont=dict(color=BRAND_COLORS["slate"]),
-            titlefont=dict(color=BRAND_COLORS["slate"]),
         ),
         yaxis2=dict(
-            title="累計 (円)",
+            title=dict(
+                text="累計 (円)",
+                font=dict(color=BRAND_COLORS["slate"]),
+            ),
             overlaying="y",
             side="right",
             gridcolor="rgba(0,0,0,0)",
             tickfont=dict(color=BRAND_COLORS["slate"]),
-            titlefont=dict(color=BRAND_COLORS["slate"]),
         ),
         height=420,
         margin=dict(t=60, b=40, l=10, r=10, pad=10),
@@ -3171,16 +3187,20 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             plot_bgcolor="white",
             paper_bgcolor="white",
             xaxis=dict(
-                title="粗利率",
+                title=dict(
+                    text="粗利率",
+                    font=dict(color=BRAND_COLORS["slate"]),
+                ),
                 gridcolor=BRAND_COLORS["cloud"],
                 tickfont=dict(color=BRAND_COLORS["slate"]),
-                titlefont=dict(color=BRAND_COLORS["slate"]),
             ),
             yaxis=dict(
-                title="件数",
+                title=dict(
+                    text="件数",
+                    font=dict(color=BRAND_COLORS["slate"]),
+                ),
                 gridcolor=BRAND_COLORS["cloud"],
                 tickfont=dict(color=BRAND_COLORS["slate"]),
-                titlefont=dict(color=BRAND_COLORS["slate"]),
             ),
         )
         hist = apply_plotly_theme(hist)
