@@ -123,6 +123,39 @@ class FilterState:
     bar_color: str
 
 
+STATUS_BADGE_MAP = {
+    "施工中": ("🔧", "info"),
+    "受注": ("✅", "success"),
+    "見積": ("📝", "info"),
+    "完了": ("🏁", "success"),
+    "失注": ("⚠️", "alert"),
+}
+
+RISK_BADGE_MAP = {
+    "高": ("⚠️", "alert"),
+    "中": ("⚡", "warn"),
+    "低": ("🛡️", "success"),
+}
+
+
+def build_badge(label: str, icon: str, tone: str) -> str:
+    return f"<span class='status-badge {tone}'>{icon} {label}</span>"
+
+
+def format_status_badge(status: str) -> str:
+    if not status:
+        return "-"
+    icon, tone = STATUS_BADGE_MAP.get(status, ("📁", "info"))
+    return build_badge(status, icon, tone)
+
+
+def format_risk_badge(level: str) -> str:
+    if not level:
+        return "-"
+    icon, tone = RISK_BADGE_MAP.get(level, ("ℹ️", "info"))
+    return build_badge(level, icon, tone)
+
+
 def switch_main_tab(tab_label: str) -> None:
     """Programmatically switch the main content tab."""
     st.session_state["main_tabs"] = tab_label
@@ -630,10 +663,22 @@ def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
                 {
                     "selector": "th",
                     "props": [
-                        ("background-color", "#F4F6FA"),
-                        ("color", "#2F3C48"),
+                        ("background-color", "#1e3a6f"),
+                        ("color", "#ffffff"),
                         ("font-weight", "600"),
-                        ("border-bottom", "1px solid #E0E6F0"),
+                        ("border-bottom", "1px solid #d5deeb"),
+                    ],
+                },
+                {
+                    "selector": "tbody tr:nth-child(odd)",
+                    "props": [
+                        ("background-color", "#eef3fb"),
+                    ],
+                },
+                {
+                    "selector": "tbody tr:nth-child(even)",
+                    "props": [
+                        ("background-color", "#ffffff"),
                     ],
                 }
             ]
@@ -885,123 +930,214 @@ def compute_monthly_aggregation(df: pd.DataFrame, fiscal_range: Tuple[date, date
     return monthly_df
 
 
-def render_sidebar(df: pd.DataFrame, masters: Dict[str, List[str]]) -> FilterState:
-    st.sidebar.header("条件設定")
-    fiscal_year = st.sidebar.selectbox(
-        "事業年度",
-        FISCAL_YEAR_OPTIONS,
-        index=FISCAL_YEAR_OPTIONS.index(DEFAULT_FISCAL_YEAR),
-        help="対象とする事業年度を選択すると全体の集計期間が更新されます。",
-    )
-    start, end = get_fiscal_year_range(fiscal_year)
+def render_control_panel(df: pd.DataFrame, masters: Dict[str, List[str]]) -> FilterState:
+    st.markdown("<div class='control-panel'>", unsafe_allow_html=True)
+    with st.container():
+        col_period, col_display, col_export = st.columns([1.35, 1.5, 1.15])
 
-    with st.sidebar.expander("フィルタ", expanded=False):
-        st.caption("フィルターを変更するとグラフや表が即座に更新されます。")
+        with col_period:
+            st.markdown("#### 集計期間")
+            fiscal_year = st.selectbox(
+                "事業年度",
+                FISCAL_YEAR_OPTIONS,
+                index=FISCAL_YEAR_OPTIONS.index(DEFAULT_FISCAL_YEAR),
+                help="対象年度を変更すると、各種グラフ・表の期間が自動調整されます。",
+                key="fiscal_year_select",
+            )
+            start, end = get_fiscal_year_range(fiscal_year)
 
-        period_state_key = "period_range_state"
-        if period_state_key not in st.session_state:
-            st.session_state[period_state_key] = (start, end)
-            st.session_state["period_range_year"] = fiscal_year
-        elif st.session_state.get("period_range_year") != fiscal_year:
-            st.session_state[period_state_key] = (start, end)
-            st.session_state["period_range_year"] = fiscal_year
+        with col_display:
+            st.markdown("#### 表示設定")
+            color_key = st.selectbox(
+                "色分けキー",
+                ["ステータス", "工種", "元請区分"],
+                help="ガントチャートや円グラフの色分け基準を切り替えます。",
+                key="color_key_select",
+            )
+            bar_color = st.color_picker(
+                "バー基調色",
+                DEFAULT_BAR_COLOR,
+                help="タイムラインのバー色をチームカラーに合わせて変更できます。",
+                key="bar_color_picker",
+            )
+            show_grid = st.checkbox(
+                "月グリッド線を表示",
+                True,
+                help="タイムラインに月単位のガイドを表示します。",
+                key="show_grid_checkbox",
+            )
+            label_density = st.selectbox(
+                "ラベル密度",
+                ["高", "中", "低"],
+                index=1,
+                help="チャート上のラベル表示量を調整します。",
+                key="label_density_select",
+            )
 
-        current_range = st.date_input(
-            "対象期間",
-            value=st.session_state.get(period_state_key, (start, end)),
-            min_value=start - relativedelta(years=1),
-            max_value=end + relativedelta(years=1),
-            format="YYYY-MM-DD",
-            help="カレンダーから範囲を選択できます。事業年度を変更すると期間が自動的に切り替わります。",
-            key="period_range_picker",
-        )
+        with col_export:
+            st.markdown("#### データ入出力")
+            export_target = st.radio(
+                "エクスポート対象",
+                ["案件データ", "月次集計"],
+                index=0,
+                horizontal=True,
+                key="export_target_radio",
+                help="ダウンロードするデータセットを選択します。",
+            )
+            export_format = st.selectbox(
+                "出力形式",
+                ["CSV", "Excel"],
+                index=0,
+                key="export_format_select",
+                help="必要な形式でファイルを出力します。",
+            )
+            st.session_state["export_target"] = export_target
+            st.session_state["export_format"] = export_format
+            st.session_state["export_placeholder"] = st.empty()
 
-        if isinstance(current_range, tuple):
-            period_from, period_to = current_range
-        else:
-            period_from = current_range
-            period_to = current_range
+        st.markdown("#### クイックアクション")
+        render_quick_actions()
 
-        if period_from and period_to and period_from > period_to:
-            period_from, period_to = period_to, period_from
+        with st.expander("詳細フィルタを表示", expanded=False):
+            st.caption("条件を絞り込むと一覧・グラフが即座に更新されます。")
 
-        st.session_state[period_state_key] = (period_from, period_to)
+            period_state_key = "period_range_state"
+            if period_state_key not in st.session_state:
+                st.session_state[period_state_key] = (start, end)
+                st.session_state["period_range_year"] = fiscal_year
+            elif st.session_state.get("period_range_year") != fiscal_year:
+                st.session_state[period_state_key] = (start, end)
+                st.session_state["period_range_year"] = fiscal_year
 
-        status_options = sorted(df["ステータス"].dropna().unique())
-        category_options = get_active_master_values(masters, "categories")
-        contractor_options = sorted(df["元請区分"].dropna().unique())
-        client_options = get_active_master_values(masters, "clients")
-        manager_options = get_active_master_values(masters, "managers")
-        prefecture_options = sorted(df["現場所在地"].dropna().unique())
+            current_range = st.date_input(
+                "対象期間",
+                value=st.session_state.get(period_state_key, (start, end)),
+                min_value=start - relativedelta(years=1),
+                max_value=end + relativedelta(years=1),
+                format="YYYY-MM-DD",
+                help="期間をドラッグして選択できます。開始日と終了日は自動的に並び替えられます。",
+                key="period_range_picker",
+            )
 
-        status = st.multiselect(
-            "案件ステータス",
-            status_options,
-            placeholder="ステータス名を検索…",
-            help="キーワード検索や Enter キーで素早く選択できます。",
-        )
-        category = st.multiselect(
-            "工種",
-            category_options,
-            placeholder="工種名を検索…",
-            help="複数選択や削除はタップ/クリックで直感的に操作できます。",
-        )
-        contractor = st.multiselect(
-            "元請区分",
-            contractor_options,
-            placeholder="元請区分を検索…",
-        )
-        clients = st.multiselect(
-            "主要取引先",
-            client_options,
-            placeholder="取引先を検索…",
-        )
-        managers = st.multiselect(
-            "担当者",
-            manager_options,
-            placeholder="担当者を検索…",
-        )
-        prefectures = st.multiselect(
-            "現場所在地 (都道府県)",
-            prefecture_options,
-            placeholder="所在地を検索…",
-        )
-        margin_min, margin_max = st.slider("粗利率レンジ (%)", -100, 100, (-100, 100))
-        filter_mode = st.radio("条件の組み合わせ", ["AND", "OR"], index=0)
-        search_text = st.text_input("フリーワード検索", placeholder="案件名・得意先など")
-        search_targets = st.multiselect(
-            "検索対象",
-            ["案件名", "得意先", "担当者", "協力会社", "工種"],
-            default=["案件名", "得意先"],
-        )
+            if isinstance(current_range, tuple):
+                period_from, period_to = current_range
+            else:
+                period_from = current_range
+                period_to = current_range
 
-    st.sidebar.subheader("表示設定")
-    color_key = st.sidebar.selectbox("色分けキー", ["ステータス", "工種", "元請区分"])
-    bar_color = st.sidebar.color_picker("バー基調色", DEFAULT_BAR_COLOR)
-    show_grid = st.sidebar.checkbox("月グリッド線を表示", True)
-    label_density = st.sidebar.selectbox("ラベル密度", ["高", "中", "低"], index=1)
+            if period_from and period_to and period_from > period_to:
+                period_from, period_to = period_to, period_from
 
-    st.sidebar.subheader("CSV 入出力")
-    export_target = st.sidebar.radio("エクスポート対象", ["案件データ", "月次集計"], index=0, key="export_target_radio")
-    export_format = st.sidebar.selectbox("出力形式", ["CSV", "Excel"], index=0)
-    st.session_state["export_target"] = export_target
-    st.session_state["export_format"] = export_format
-    st.session_state["export_placeholder"] = st.sidebar.empty()
+            st.session_state[period_state_key] = (period_from, period_to)
 
-    uploaded = st.sidebar.file_uploader("データインポート", type=["csv", "xlsx", "xls"])
-    if uploaded is not None:
-        mode = st.sidebar.radio("取り込み方法", ["マージ", "置換"], index=0, key="import_mode")
-        if st.sidebar.button("インポート実行"):
-            import_projects(uploaded, mode)
-            st.sidebar.success("インポートが完了しました。ページを再読み込みしてください。")
+            status_options = sorted(df["ステータス"].dropna().unique())
+            category_options = get_active_master_values(masters, "categories")
+            contractor_options = sorted(df["元請区分"].dropna().unique())
+            client_options = get_active_master_values(masters, "clients")
+            manager_options = get_active_master_values(masters, "managers")
+            prefecture_options = sorted(df["現場所在地"].dropna().unique())
 
-    template_df = pd.DataFrame(columns=PROJECT_BASE_COLUMNS)
-    st.sidebar.download_button(
-        "テンプレートダウンロード",
-        data=prepare_export(template_df, "CSV"),
-        file_name="projects_template.csv",
-        mime="text/csv",
-    )
+            filter_cols = st.columns(3)
+            with filter_cols[0]:
+                status = st.multiselect(
+                    "案件ステータス",
+                    status_options,
+                    placeholder="ステータス名を検索…",
+                    help="進捗に応じた案件のみ抽出します。",
+                )
+                contractor = st.multiselect(
+                    "元請区分",
+                    contractor_options,
+                    placeholder="元請区分を検索…",
+                    help="自社/一次/二次などの区分を指定します。",
+                )
+                margin_min, margin_max = st.slider(
+                    "粗利率レンジ (%)",
+                    -100,
+                    100,
+                    (-100, 100),
+                    help="粗利率の下限・上限を同時に指定できます。",
+                )
+
+            with filter_cols[1]:
+                category = st.multiselect(
+                    "工種",
+                    category_options,
+                    placeholder="工種名を検索…",
+                    help="複数選択や削除はタップ/クリックで直感的に操作できます。",
+                )
+                clients = st.multiselect(
+                    "主要取引先",
+                    client_options,
+                    placeholder="取引先を検索…",
+                    help="取引先名を入力すると候補が絞り込まれます。",
+                )
+                filter_mode = st.radio(
+                    "条件の組み合わせ",
+                    ["AND", "OR"],
+                    index=0,
+                    horizontal=True,
+                    help="AND: 全条件を満たす案件 / OR: いずれかの条件に合致する案件を表示します。",
+                )
+
+            with filter_cols[2]:
+                managers = st.multiselect(
+                    "担当者",
+                    manager_options,
+                    placeholder="担当者を検索…",
+                    help="担当者名で案件を絞り込めます。",
+                )
+                prefectures = st.multiselect(
+                    "現場所在地 (都道府県)",
+                    prefecture_options,
+                    placeholder="所在地を検索…",
+                    help="地域別の案件を確認するときに活用できます。",
+                )
+                search_text = st.text_input(
+                    "フリーワード検索",
+                    placeholder="案件名・得意先・協力会社など",
+                    help="部分一致で検索します。スペース区切りで複数キーワードも可能です。",
+                )
+                search_targets = st.multiselect(
+                    "検索対象",
+                    ["案件名", "得意先", "担当者", "協力会社", "工種"],
+                    default=["案件名", "得意先"],
+                    help="フリーワード検索の対象カラムを指定します。",
+                )
+
+            st.markdown("##### データ取り込み")
+            upload_cols = st.columns([2, 1])
+            with upload_cols[0]:
+                uploaded = st.file_uploader(
+                    "案件データを取り込む",
+                    type=["csv", "xlsx", "xls"],
+                    help="CSV/Excel 形式で案件一覧を一括更新できます。",
+                )
+            with upload_cols[1]:
+                mode = st.radio(
+                    "取り込み方法",
+                    ["マージ", "置換"],
+                    index=0,
+                    help="マージ: 既存案件を維持し差分を追加 / 置換: ファイル内容で上書き",
+                )
+                if uploaded is not None and st.button(
+                    "インポート実行",
+                    use_container_width=True,
+                    help="読み込んだデータを適用します。",
+                ):
+                    import_projects(uploaded, mode)
+                    st.success("インポートが完了しました。ページを再読み込みしてください。")
+
+            template_df = pd.DataFrame(columns=PROJECT_BASE_COLUMNS)
+            st.download_button(
+                "テンプレートダウンロード",
+                data=prepare_export(template_df, "CSV"),
+                file_name="projects_template.csv",
+                mime="text/csv",
+                help="案件登録用のフォーマットを取得します。",
+            )
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
     return FilterState(
         fiscal_year=fiscal_year,
@@ -1024,14 +1160,7 @@ def render_sidebar(df: pd.DataFrame, masters: Dict[str, List[str]]) -> FilterSta
     )
 
 
-def toggle_sidebar_visibility() -> None:
-    st.session_state["sidebar_visible"] = not st.session_state.get("sidebar_visible", True)
-
-
 def apply_brand_theme() -> None:
-    sidebar_visible = st.session_state.get("sidebar_visible", True)
-    sidebar_transform = "translateX(0)" if sidebar_visible else "translateX(-108%)"
-    sidebar_shadow = "0 24px 48px rgba(11, 31, 58, 0.15)" if sidebar_visible else "none"
     st.markdown(
         f"""
         <style>
@@ -1043,20 +1172,25 @@ def apply_brand_theme() -> None:
             --brand-gold: {BRAND_COLORS['gold']};
             --brand-sky: {BRAND_COLORS['sky']};
             --brand-crimson: {BRAND_COLORS['crimson']};
-            --sidebar-transform: {sidebar_transform};
-            --sidebar-shadow: {sidebar_shadow};
+            --accent-green: #2F9E5B;
+            --surface-bg: #f7f9fc;
+            --surface-panel: #e7eef8;
+            --surface-card: #ffffff;
+            --surface-outline: #d5deeb;
+            --text-muted: #5b6c82;
+            --text-invert: #ffffff;
         }}
 
         html, body, [data-testid="stAppViewContainer"], [data-testid="block-container"] {{
-            background-color: var(--brand-mist) !important;
+            background-color: var(--surface-bg) !important;
             color: var(--brand-slate);
             font-family: 'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif;
         }}
 
         [data-testid="block-container"] {{
-            padding-top: 1.5rem;
+            padding-top: 1.2rem;
             padding-bottom: 3rem;
-            max-width: 1200px;
+            max-width: 1240px;
         }}
 
         h1, h2, h3, h4 {{
@@ -1066,32 +1200,33 @@ def apply_brand_theme() -> None:
         }}
 
         .page-title {{
-            font-size: 2.1rem;
+            font-size: 2.25rem;
             font-weight: 600;
-            margin-bottom: 0.1rem;
+            margin-bottom: 0.25rem;
         }}
 
         .page-subtitle {{
-            font-size: 0.95rem;
-            color: #60738a;
-            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 1.1rem;
         }}
 
         .kpi-card {{
-            background: white;
+            background: linear-gradient(145deg, rgba(30, 76, 156, 0.95), rgba(11, 31, 58, 0.95));
             border-radius: 18px;
-            padding: 1.2rem 1.4rem;
-            box-shadow: 0 12px 32px rgba(11, 31, 58, 0.08);
-            border: 1px solid rgba(12, 31, 58, 0.06);
+            padding: 1.3rem 1.5rem;
+            box-shadow: 0 18px 36px rgba(11, 31, 58, 0.16);
+            border: 1px solid rgba(12, 31, 58, 0.18);
             display: flex;
             gap: 1rem;
             align-items: center;
             height: 100%;
+            color: var(--text-invert);
         }}
 
         .kpi-card.alert {{
-            border-color: rgba(176, 48, 56, 0.3);
-            box-shadow: 0 16px 40px rgba(176, 48, 56, 0.12);
+            border-color: rgba(176, 48, 56, 0.45);
+            box-shadow: 0 18px 44px rgba(176, 48, 56, 0.25);
         }}
 
         .kpi-icon {{
@@ -1101,13 +1236,13 @@ def apply_brand_theme() -> None:
             display: grid;
             place-items: center;
             font-size: 1.6rem;
-            background: rgba(77, 126, 168, 0.1);
-            color: var(--brand-sky);
+            background: rgba(255, 255, 255, 0.18);
+            color: #dce7f8;
         }}
 
         .kpi-title {{
             font-size: 0.9rem;
-            color: #5b6c82;
+            color: rgba(255, 255, 255, 0.75);
             text-transform: uppercase;
             letter-spacing: 0.08em;
         }}
@@ -1115,81 +1250,109 @@ def apply_brand_theme() -> None:
         .kpi-value {{
             font-size: 1.6rem;
             font-weight: 600;
-            color: var(--brand-navy);
+            color: var(--text-invert);
             margin: 0.2rem 0;
         }}
 
         .kpi-subtitle {{
             font-size: 0.85rem;
-            color: #7a889d;
+            color: rgba(255, 255, 255, 0.7);
         }}
 
         .fiscal-pill {{
             display: inline-flex;
             align-items: center;
             gap: 0.3rem;
-            background: white;
+            background: rgba(30, 76, 156, 0.12);
             border-radius: 999px;
             padding: 0.35rem 0.9rem;
             font-size: 0.85rem;
-            color: var(--brand-slate);
-            box-shadow: inset 0 0 0 1px rgba(11, 31, 58, 0.08);
+            color: var(--brand-navy);
+            box-shadow: inset 0 0 0 1px rgba(30, 76, 156, 0.25);
         }}
 
-        .sidebar-toggle {{
-            display: none;
-            margin-bottom: 0.5rem;
+        .control-panel {{
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(231, 238, 248, 0.88));
+            border-radius: 22px;
+            padding: 1.1rem 1.4rem 1.25rem;
+            border: 1px solid var(--surface-outline);
+            box-shadow: 0 22px 44px rgba(11, 31, 58, 0.14);
+            margin-bottom: 1.2rem;
         }}
 
-        [data-testid="stSidebar"] {{
-            background: white;
-            border-right: 1px solid var(--brand-cloud);
-            padding: 1.5rem 1.4rem 3rem;
-            width: 320px;
-            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-            box-shadow: var(--sidebar-shadow);
-        }}
-
-        [data-testid="stSidebar"] .stRadio > label {{
-            font-weight: 500;
+        .control-panel h4,
+        .control-panel h5,
+        .control-panel label {{
             color: var(--brand-slate);
         }}
 
-        [data-testid="stSidebar"] .stMultiSelect, [data-testid="stSidebar"] .stSelectbox, [data-testid="stSidebar"] .stSlider {{
-            margin-bottom: 1rem;
-        }}
-
-        [data-testid="stSidebar"]::-webkit-scrollbar {{ width: 6px; }}
-        [data-testid="stSidebar"]::-webkit-scrollbar-thumb {{
-            background: rgba(91, 108, 130, 0.25);
-            border-radius: 3px;
-        }}
-
-        @media (max-width: 1200px) {{
-            [data-testid="stSidebar"] {{
-                position: fixed;
-                inset: 0 auto 0 0;
-                z-index: 1000;
-                transform: var(--sidebar-transform);
-                width: min(88vw, 320px);
-            }}
-
-            .sidebar-toggle {{
-                display: inline-flex !important;
-            }}
-        }}
-
-        .sidebar-toggle button {{
-            width: 100%;
-            border-radius: 999px !important;
-            background: var(--brand-navy) !important;
-            color: white !important;
+        .control-panel .stButton > button {{
+            border-radius: 14px;
+            background: linear-gradient(145deg, var(--brand-sky), var(--brand-navy));
+            color: white;
             border: none;
-            box-shadow: 0 10px 24px rgba(11, 31, 58, 0.18);
+            font-weight: 600;
+            box-shadow: 0 14px 24px rgba(11, 31, 58, 0.18);
         }}
 
-        .sidebar-toggle button:hover {{
-            background: #10284f !important;
+        .control-panel .stButton > button:hover {{
+            background: linear-gradient(145deg, #4d86c0, #10274d);
+        }}
+
+        .quick-actions {{
+            margin-top: 0.4rem;
+        }}
+
+        .quick-actions .stButton > button {{
+            background: rgba(30, 76, 156, 0.12) !important;
+            color: var(--brand-navy) !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(30, 76, 156, 0.3) !important;
+            font-weight: 600 !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }}
+
+        .quick-actions .stButton > button:hover {{
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(30, 76, 156, 0.18) !important;
+        }}
+
+        .quick-hint {{
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            padding-top: 0.35rem;
+        }}
+
+        .status-badge {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 0.25rem 0.65rem;
+            background: rgba(30, 76, 156, 0.12);
+            color: var(--brand-navy);
+        }}
+
+        .status-badge.info {{
+            background: rgba(77, 126, 168, 0.18);
+            color: var(--brand-sky);
+        }}
+
+        .status-badge.success {{
+            background: rgba(47, 158, 91, 0.15);
+            color: #2F9E5B;
+        }}
+
+        .status-badge.warn {{
+            background: rgba(201, 162, 39, 0.18);
+            color: var(--brand-gold);
+        }}
+
+        .status-badge.alert {{
+            background: rgba(176, 48, 56, 0.15);
+            color: var(--brand-crimson);
         }}
 
         div[data-testid="stMarkdownContainer"] .risk-high {{
@@ -1204,16 +1367,30 @@ def apply_brand_theme() -> None:
 
         .element-container:has(.stDataFrame) {{
             border-radius: 18px;
-            background: white;
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(231, 238, 248, 0.92));
             padding: 0.6rem 0.6rem 0.2rem;
-            box-shadow: 0 8px 24px rgba(11, 31, 58, 0.05);
+            box-shadow: 0 10px 26px rgba(11, 31, 58, 0.1);
             margin-bottom: 1.2rem;
+            border: 1px solid rgba(30, 76, 156, 0.15);
         }}
 
-        .quick-hint {{
-            font-size: 0.8rem;
-            color: #6b7a90;
-            padding-top: 0.35rem;
+        [data-testid="stDataFrame"] table thead tr th {{
+            background: linear-gradient(135deg, rgba(30, 76, 156, 0.95), rgba(11, 31, 58, 0.95));
+            color: var(--text-invert) !important;
+            font-weight: 600 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.25) !important;
+        }}
+
+        [data-testid="stDataFrame"] table tbody tr:nth-child(odd) {{
+            background-color: rgba(239, 244, 252, 0.85);
+        }}
+
+        [data-testid="stDataFrame"] table tbody tr:nth-child(even) {{
+            background-color: rgba(255, 255, 255, 0.95);
+        }}
+
+        [data-testid="stDataFrame"] table tbody tr:hover {{
+            background-color: rgba(77, 126, 168, 0.16) !important;
         }}
 
         .help-fab {{
@@ -1240,27 +1417,24 @@ def apply_brand_theme() -> None:
 
 
 def render_page_header(fiscal_year: int, fiscal_range: Tuple[date, date]) -> None:
-    header_cols = st.columns([1.1, 4, 2])
-    with header_cols[0]:
-        st.markdown('<div class="sidebar-toggle">', unsafe_allow_html=True)
-        st.button("☰ フィルタ", key="sidebar_toggle_button", on_click=toggle_sidebar_visibility)
-        st.markdown('</div>', unsafe_allow_html=True)
-    with header_cols[1]:
+    col_title, col_meta = st.columns([3.5, 2])
+    with col_title:
         st.markdown('<div class="page-title">工事受注ダッシュボード</div>', unsafe_allow_html=True)
         st.markdown(
-            '<div class="page-subtitle">案件状況・粗利・キャッシュを俯瞰し迅速な意思決定を支援します</div>',
+            '<div class="page-subtitle">主要指標とリスクをワンクリックで把握し、現場の次のアクションにつなげます。</div>',
             unsafe_allow_html=True,
         )
-    with header_cols[2]:
+    with col_meta:
         fiscal_from, fiscal_to = fiscal_range
         st.markdown(
-            f"<div style='display:flex;justify-content:flex-end'><span class='fiscal-pill'>FY {fiscal_year} : {fiscal_from:%Y.%m} - {fiscal_to:%Y.%m}</span></div>",
+            f"<div style='display:flex;justify-content:flex-end;gap:0.4rem;align-items:center;'>"
+            f"<span class='fiscal-pill'>FY {fiscal_year} : {fiscal_from:%Y.%m} - {fiscal_to:%Y.%m}</span>"
+            f"</div>",
             unsafe_allow_html=True,
         )
 
 
 def render_quick_actions() -> None:
-    st.markdown("### クイックアクセス")
     actions = [
         {
             "label": "＋ 新規案件を登録",
@@ -1283,14 +1457,21 @@ def render_quick_actions() -> None:
             "callback": lambda: switch_main_tab("設定"),
         },
     ]
+    st.markdown("<div class='quick-actions'>", unsafe_allow_html=True)
     cols = st.columns(len(actions))
     for idx, (col, action) in enumerate(zip(cols, actions)):
         with col:
-            if st.button(action["label"], use_container_width=True, key=f"qa_{idx}"):
+            if st.button(
+                action["label"],
+                use_container_width=True,
+                key=f"qa_{idx}",
+                help=action["description"],
+            ):
                 action["callback"]()
             st.caption(action["description"])
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown(
-        "<a class='help-fab' href='#onboarding-guide'>❓ チュートリアル</a>",
+        "<a class='help-fab' href='#onboarding-guide' title='初めての方はこちらから操作手順を確認できます'>❓ チュートリアル</a>",
         unsafe_allow_html=True,
     )
 
@@ -1339,13 +1520,18 @@ def import_projects(uploaded, mode: str) -> None:
             merged.reset_index(inplace=True)
             save_projects(merged)
     except Exception as exc:
-        st.sidebar.error(f"インポート中にエラーが発生しました: {exc}")
+        st.error(f"インポート中にエラーが発生しました: {exc}")
 
 
 def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, masters: Dict[str, List[str]]) -> None:
     st.subheader("案件一覧")
     col_add, col_draft, col_hint1, col_hint2 = st.columns([1.2, 1, 2.2, 2.2])
-    if col_add.button("＋ 新規案件を追加", type="primary", use_container_width=True):
+    if col_add.button(
+        "＋ 新規案件を追加",
+        type="primary",
+        use_container_width=True,
+        help="案件登録フォームを開きます。",
+    ):
         st.session_state["show_project_modal"] = True
 
     draft_exists = bool(st.session_state.get("project_form_draft"))
@@ -1573,23 +1759,23 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
         "回収終了日": st.column_config.DateColumn("回収終了日"),
         "支払開始日": st.column_config.DateColumn("支払開始日"),
         "支払終了日": st.column_config.DateColumn("支払終了日"),
-        "受注予定額": st.column_config.NumberColumn("受注予定額", format="%d", min_value=0),
-        "受注金額": st.column_config.NumberColumn("受注金額", format="%d", min_value=0),
-        "予算原価": st.column_config.NumberColumn("予算原価", format="%d", min_value=0),
-        "予定原価": st.column_config.NumberColumn("予定原価", format="%d", min_value=0),
-        "実績原価": st.column_config.NumberColumn("実績原価", format="%d", min_value=0),
-        "粗利率": st.column_config.NumberColumn("粗利率", format="%0.1f", min_value=-100, max_value=100),
-        "進捗率": st.column_config.NumberColumn("進捗率", format="%0.1f", min_value=0, max_value=100),
-        "月平均必要人数": st.column_config.NumberColumn("月平均必要人数", format="%0.1f", min_value=0),
-        "粗利額": st.column_config.NumberColumn("粗利額", format="%d", disabled=True),
-        "原価率": st.column_config.NumberColumn("原価率", format="%0.1f", disabled=True),
-        "受注差異": st.column_config.NumberColumn("受注差異", format="%d", disabled=True),
-        "予算乖離額": st.column_config.NumberColumn("予算乖離額", format="%d", disabled=True),
-        "完成工事高": st.column_config.NumberColumn("完成工事高", format="%d", disabled=True),
-        "実行粗利": st.column_config.NumberColumn("実行粗利", format="%d", disabled=True),
-        "想定進捗率": st.column_config.NumberColumn("想定進捗率", format="%0.1f", disabled=True),
-        "進捗差異": st.column_config.NumberColumn("進捗差異", format="%0.1f", disabled=True),
-        "遅延日数": st.column_config.NumberColumn("遅延日数", format="%d", disabled=True),
+        "受注予定額": st.column_config.NumberColumn("受注予定額", format="%,d 円", min_value=0),
+        "受注金額": st.column_config.NumberColumn("受注金額", format="%,d 円", min_value=0),
+        "予算原価": st.column_config.NumberColumn("予算原価", format="%,d 円", min_value=0),
+        "予定原価": st.column_config.NumberColumn("予定原価", format="%,d 円", min_value=0),
+        "実績原価": st.column_config.NumberColumn("実績原価", format="%,d 円", min_value=0),
+        "粗利率": st.column_config.NumberColumn("粗利率", format="%.1f %%", min_value=-100, max_value=100),
+        "進捗率": st.column_config.NumberColumn("進捗率", format="%.1f %%", min_value=0, max_value=100),
+        "月平均必要人数": st.column_config.NumberColumn("月平均必要人数", format="%.1f 人", min_value=0),
+        "粗利額": st.column_config.NumberColumn("粗利額", format="%,d 円", disabled=True),
+        "原価率": st.column_config.NumberColumn("原価率", format="%.1f %%", disabled=True),
+        "受注差異": st.column_config.NumberColumn("受注差異", format="%,d 円", disabled=True),
+        "予算乖離額": st.column_config.NumberColumn("予算乖離額", format="%,d 円", disabled=True),
+        "完成工事高": st.column_config.NumberColumn("完成工事高", format="%,d 円", disabled=True),
+        "実行粗利": st.column_config.NumberColumn("実行粗利", format="%,d 円", disabled=True),
+        "想定進捗率": st.column_config.NumberColumn("想定進捗率", format="%.1f %%", disabled=True),
+        "進捗差異": st.column_config.NumberColumn("進捗差異", format="%.1f %%", disabled=True),
+        "遅延日数": st.column_config.NumberColumn("遅延日数", format="%d 日", disabled=True),
         "予算超過": st.column_config.CheckboxColumn("予算超過", disabled=True),
         "リスクレベル": st.column_config.TextColumn("リスクレベル", disabled=True),
         "リスクコメント": st.column_config.TextColumn("リスクコメント", disabled=True),
@@ -1685,9 +1871,14 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
     if selected_indices:
         selected_row = display_df.iloc[selected_indices[0]]
         with st.expander(f"{selected_row['案件名']} の詳細", expanded=True):
+            status_badge = format_status_badge(selected_row.get("ステータス", ""))
+            risk_badge = format_risk_badge(selected_row.get("リスクレベル", ""))
             detail_cols = st.columns(2)
             detail_cols[0].markdown(f"**案件ID**: {selected_row['id']}")
-            detail_cols[0].markdown(f"**ステータス**: {selected_row['ステータス']}")
+            detail_cols[0].markdown(
+                f"**ステータス**: {status_badge}",
+                unsafe_allow_html=True,
+            )
             detail_cols[0].markdown(f"**工種**: {selected_row['工種']}")
             detail_cols[0].markdown(f"**元請区分**: {selected_row['元請区分']}")
             detail_cols[1].markdown(f"**担当者**: {selected_row['担当者']}")
@@ -1697,10 +1888,15 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
             st.markdown(
                 f"着工日: {format_date(selected_row['着工日'])} / 竣工日: {format_date(selected_row['竣工日'])}"
             )
-            st.markdown("**備考**")
-            st.write(selected_row.get("備考", "-"))
+            progress_value = float(selected_row.get("進捗率", 0) or 0)
+            st.markdown(f"**進捗率**: {progress_value:.1f}%")
+            st.progress(min(max(progress_value / 100, 0.0), 1.0))
+            st.markdown("**リスク指標**", unsafe_allow_html=True)
+            st.markdown(risk_badge, unsafe_allow_html=True)
             st.markdown("**リスクメモ**")
             st.write(selected_row.get("リスクメモ", "-"))
+            st.markdown("**備考**")
+            st.write(selected_row.get("備考", "-"))
             st.caption("添付ファイルは案件詳細ページから確認・追加できます。")
     else:
         st.info("詳細を確認したい案件を一覧から選択してください。")
@@ -2103,8 +2299,6 @@ def render_settings_tab(masters: Dict[str, List[str]]) -> None:
 
 def main() -> None:
     st.set_page_config(page_title="工事受注案件 予定表", layout="wide")
-    if "sidebar_visible" not in st.session_state:
-        st.session_state["sidebar_visible"] = True
     apply_brand_theme()
     ensure_data_files()
     masters = load_masters()
@@ -2115,15 +2309,25 @@ def main() -> None:
         st.error(f"データの読み込みに失敗しました: {exc}")
         return
 
-    filters = render_sidebar(projects_df, masters)
+    header_year = st.session_state.get("fiscal_year_select", DEFAULT_FISCAL_YEAR)
+    stored_range = st.session_state.get("period_range_state")
+    if (
+        isinstance(stored_range, tuple)
+        and len(stored_range) == 2
+        and all(isinstance(v, date) for v in stored_range)
+    ):
+        header_range = stored_range  # type: ignore[assignment]
+    else:
+        header_range = get_fiscal_year_range(header_year)
+
+    render_page_header(header_year, header_range)
+
+    filters = render_control_panel(projects_df, masters)
     fiscal_range = get_fiscal_year_range(filters.fiscal_year)
     filtered_df = apply_filters(projects_df, filters)
     enriched_filtered_df = enrich_projects(filtered_df) if not filtered_df.empty else filtered_df
     monthly_df = compute_monthly_aggregation(filtered_df, fiscal_range)
     st.session_state["monthly"] = monthly_df
-
-    render_page_header(filters.fiscal_year, fiscal_range)
-    render_quick_actions()
 
     export_placeholder = st.session_state.get("export_placeholder")
     export_target = st.session_state.get("export_target", "案件データ")
@@ -2158,14 +2362,6 @@ def main() -> None:
         key="main_tabs",
         label_visibility="collapsed",
     )
-
-    if selected_tab == "設定":
-        if "sidebar_prev" not in st.session_state:
-            st.session_state["sidebar_prev"] = st.session_state.get("sidebar_visible", True)
-        st.session_state["sidebar_visible"] = False
-    else:
-        if "sidebar_prev" in st.session_state:
-            st.session_state["sidebar_visible"] = st.session_state.pop("sidebar_prev")
 
     st.divider()
 
