@@ -943,7 +943,10 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         plot_bgcolor="white",
         paper_bgcolor="white",
         height=max(400, 40 * project_count + 200),
-        title=f"{filters.fiscal_year}年度 タイムライン",
+        title=dict(
+            text=f"{filters.fiscal_year}年度 タイムライン",
+            font=dict(color=BRAND_COLORS["slate"]),
+        ),
         xaxis=dict(
             range=[start_ts, end_ts],
             tickformat="%m/%d",
