@@ -497,6 +497,38 @@ def apply_filters(df: pd.DataFrame, filters: FilterState) -> pd.DataFrame:
     return result
 
 
+def hex_to_rgb(color: str) -> Optional[Tuple[int, int, int]]:
+    """Convert a hex color string (e.g. #0B1F3A) to an RGB tuple."""
+
+    if not isinstance(color, str):
+        return None
+    cleaned = color.strip().lstrip("#")
+    if len(cleaned) == 3:
+        cleaned = "".join(ch * 2 for ch in cleaned)
+    if len(cleaned) != 6:
+        return None
+    try:
+        return tuple(int(cleaned[i : i + 2], 16) for i in (0, 2, 4))
+    except ValueError:
+        return None
+
+
+def get_contrasting_text_color(color: str) -> str:
+    """Return a text color (white or navy) that contrasts with the given fill color."""
+
+    rgb = hex_to_rgb(color)
+    if rgb is None:
+        return BRAND_COLORS["navy"]
+
+    def to_linear(channel: float) -> float:
+        channel = channel / 255
+        return channel / 12.92 if channel <= 0.03928 else ((channel + 0.055) / 1.055) ** 2.4
+
+    r, g, b = (to_linear(c) for c in rgb)
+    luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    return "#FFFFFF" if luminance < 0.55 else BRAND_COLORS["navy"]
+
+
 def generate_color_map(values: pd.Series, key: str, default_color: str) -> Dict[str, str]:
     palettes = {
         "ステータス": [
@@ -774,6 +806,11 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
                 text=[f"{row['進捗率']:.0f}%"],
                 texttemplate="%{text}",
                 textposition="inside",
+                textfont=dict(
+                    color=[get_contrasting_text_color(bar_color)],
+                    family="'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif",
+                    size=12,
+                ),
             )
         )
         annotation_symbol = {"高": "⚠️", "中": "△"}.get(risk_level)
