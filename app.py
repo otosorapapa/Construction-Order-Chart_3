@@ -1067,7 +1067,9 @@ def _combine_tick_labels(
 # GEN: end
 
 
-def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[date, date]) -> go.Figure:
+def create_timeline(
+    df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[date, date]
+) -> go.Figure:
     if df.empty:
         fig = go.Figure()
         fig.update_layout(
@@ -1308,6 +1310,196 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             bgcolor="rgba(255, 255, 255, 0.85)",
             borderpad=4,
         )
+    fig.update_yaxes(tickmode="linear", tickfont=dict(color=BRAND_COLORS["slate"]))
+    fig.update_xaxes(tickfont=dict(color=BRAND_COLORS["slate"]))
+    return apply_plotly_theme(fig)
+
+
+def create_schedule_chart(
+    df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[date, date]
+) -> go.Figure:
+    if df.empty:
+        fig = go.Figure()
+        fig.update_layout(
+            template=BRAND_TEMPLATE,
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            height=400,
+            xaxis=dict(
+                title=dict(text="期間", font=dict(color=BRAND_COLORS["slate"])),
+                tickfont=dict(color=BRAND_COLORS["slate"]),
+                gridcolor=BRAND_COLORS["cloud"],
+                linecolor=BRAND_COLORS["cloud"],
+            ),
+            yaxis=dict(
+                title=dict(text="現場名", font=dict(color=BRAND_COLORS["slate"])),
+                tickfont=dict(color=BRAND_COLORS["slate"]),
+                gridcolor="rgba(0,0,0,0)",
+            ),
+        )
+        return apply_plotly_theme(fig)
+
+    fig = go.Figure()
+    bar_color = filters.bar_color
+
+    for _, row in df.iterrows():
+        planned_start_dt = pd.to_datetime(row.get("着工日"), errors="coerce")
+        planned_end_dt = pd.to_datetime(row.get("竣工日"), errors="coerce")
+        if pd.isna(planned_start_dt) or pd.isna(planned_end_dt):
+            continue
+
+        duration_days = (planned_end_dt - planned_start_dt).days + 1
+        if duration_days <= 0:
+            continue
+
+        project_name = row.get("案件名", "-")
+        hover_text = (
+            f"現場名: {project_name}<br>"
+            f"予定期間: {format_date(planned_start_dt)}〜{format_date(planned_end_dt)}<br>"
+            f"担当者: {row.get('担当者', '-') or '-'}<br>"
+            f"協力会社: {row.get('協力会社', '-') or '-'}"
+        )
+
+        fig.add_trace(
+            go.Bar(
+                x=[duration_days],
+                y=[project_name],
+                base=planned_start_dt,
+                orientation="h",
+                marker=dict(
+                    color=bar_color,
+                    line=dict(color="rgba(12,31,58,0.3)", width=1),
+                ),
+                hovertemplate=hover_text + "<extra></extra>",
+                name="予定",
+                showlegend=False,
+            )
+        )
+
+        actual_start_dt = pd.to_datetime(row.get("実際着工日"), errors="coerce")
+        actual_end_dt = pd.to_datetime(row.get("実際竣工日"), errors="coerce")
+        if not pd.isna(actual_start_dt) and not pd.isna(actual_end_dt):
+            actual_duration = (actual_end_dt - actual_start_dt).days + 1
+            if actual_duration > 0:
+                fig.add_trace(
+                    go.Bar(
+                        x=[actual_duration],
+                        y=[project_name],
+                        base=actual_start_dt,
+                        orientation="h",
+                        marker=dict(
+                            color="rgba(0,0,0,0)",
+                            line=dict(color=BRAND_COLORS["crimson"], width=2),
+                        ),
+                        hovertemplate=(
+                            hover_text
+                            + f"<br>実績期間: {format_date(actual_start_dt)}〜{format_date(actual_end_dt)}"
+                            + "<extra></extra>"
+                        ),
+                        name="実績",
+                        showlegend=False,
+                    )
+                )
+
+    project_labels: Set[str] = set()
+    for trace in fig.data:
+        y_vals = getattr(trace, "y", None)
+        if y_vals:
+            project_labels.update(str(val) for val in y_vals)
+
+    (
+        major_marks,
+        minor_marks,
+        (range_start, range_end),
+        major_labels,
+        minor_labels,
+    ) = gen_time_marks(df, fiscal_range)
+    theme = get_active_theme()
+    range_max = range_end + pd.Timedelta(days=1)
+    project_count = max(1, len(project_labels))
+
+    fig.update_layout(
+        template=BRAND_TEMPLATE,
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        barmode="overlay",
+        bargap=0.2,
+        height=max(360, 32 * project_count + 160),
+        title=dict(
+            text=f"{filters.fiscal_year}年度 日程スケジュール",
+            font=dict(color=BRAND_COLORS["slate"]),
+        ),
+        xaxis=dict(
+            range=[range_start, range_max],
+            showgrid=filters.show_grid,
+            tickmode="array",
+            tickvals=_combine_tick_vals(major_marks, minor_marks),
+            ticktext=_combine_tick_labels(
+                major_marks, major_labels, minor_marks, minor_labels
+            ),
+            gridcolor=BRAND_COLORS["cloud"],
+            linecolor=BRAND_COLORS["cloud"],
+            tickfont=dict(color=BRAND_COLORS["slate"]),
+            title=dict(text="期間", font=dict(color=BRAND_COLORS["slate"])),
+        ),
+        yaxis=dict(
+            autorange="reversed",
+            title=dict(text="現場名", font=dict(color=BRAND_COLORS["slate"])),
+            tickfont=dict(color=BRAND_COLORS["slate"], size=12),
+            gridcolor="rgba(0,0,0,0)",
+        ),
+        margin=dict(t=80, b=40, l=10, r=10, pad=10),
+        showlegend=False,
+    )
+
+    major_line_color = theme["chart_grid"]
+    minor_line_color = (
+        "rgba(255,255,255,0.28)" if theme.get("slug") == "dark" else "rgba(0,0,0,0.28)"
+    )
+    major_mark_set: Set[pd.Timestamp] = set(major_marks)
+
+    for mark in major_marks:
+        if mark < range_start or mark > range_end:
+            continue
+        fig.add_vline(
+            x=mark,
+            line_width=1.2,
+            line_color=major_line_color,
+            opacity=0.85,
+        )
+
+    for mark in minor_marks:
+        if mark < range_start or mark > range_end or mark in major_mark_set:
+            continue
+        fig.add_vline(
+            x=mark,
+            line_width=0.5,
+            line_dash="dot",
+            line_color=minor_line_color,
+            opacity=0.32,
+        )
+
+    today = pd.Timestamp(date.today())
+    if range_start <= today <= range_end:
+        fig.add_vline(
+            x=today,
+            line_width=2,
+            line_color=BRAND_COLORS["crimson"],
+        )
+        fig.add_annotation(
+            x=today,
+            xref="x",
+            y=1,
+            yref="paper",
+            text="今日",
+            showarrow=False,
+            xanchor="left",
+            yanchor="bottom",
+            font=dict(color=BRAND_COLORS["crimson"]),
+            bgcolor="rgba(255, 255, 255, 0.85)",
+            borderpad=4,
+        )
+
     fig.update_yaxes(tickmode="linear", tickfont=dict(color=BRAND_COLORS["slate"]))
     fig.update_xaxes(tickfont=dict(color=BRAND_COLORS["slate"]))
     return apply_plotly_theme(fig)
@@ -3260,6 +3452,9 @@ def main() -> None:
         st.subheader("タイムライン")
         timeline_fig = create_timeline(enriched_filtered_df, filters, fiscal_range)
         st.plotly_chart(timeline_fig, use_container_width=True)
+        st.markdown("### 日程スケジュール")
+        schedule_fig = create_schedule_chart(enriched_filtered_df, filters, fiscal_range)
+        st.plotly_chart(schedule_fig, use_container_width=True)
         if not enriched_filtered_df.empty:
             st.markdown("### リスクサマリー")
             risk_table = enriched_filtered_df[[
