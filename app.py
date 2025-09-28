@@ -748,8 +748,19 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
     if df.empty:
         fig = go.Figure()
         fig.update_layout(
-            xaxis_title="期間",
-            yaxis_title="案件名",
+            xaxis=dict(
+                title="期間",
+                tickfont=dict(color=BRAND_COLORS["slate"]),
+                titlefont=dict(color=BRAND_COLORS["slate"]),
+                gridcolor=BRAND_COLORS["cloud"],
+                linecolor=BRAND_COLORS["cloud"],
+            ),
+            yaxis=dict(
+                title="案件名",
+                tickfont=dict(color=BRAND_COLORS["slate"]),
+                titlefont=dict(color=BRAND_COLORS["slate"]),
+                gridcolor="rgba(0,0,0,0)",
+            ),
             template=BRAND_TEMPLATE,
             height=500,
             plot_bgcolor="white",
@@ -842,10 +853,14 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             ticktext=[d.strftime("%m") for d in month_starts],
             gridcolor=BRAND_COLORS["cloud"],
             linecolor=BRAND_COLORS["cloud"],
+            tickfont=dict(color=BRAND_COLORS["slate"]),
         ),
         yaxis=dict(
             autorange="reversed",
-            tickfont=dict(size=label_font.get(filters.label_density, 12)),
+            tickfont=dict(
+                size=label_font.get(filters.label_density, 12),
+                color=BRAND_COLORS["slate"],
+            ),
             gridcolor="rgba(0,0,0,0)",
         ),
         margin=dict(t=80, b=40, l=10, r=10, pad=10),
@@ -880,7 +895,8 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             bgcolor="rgba(255, 255, 255, 0.85)",
             borderpad=4,
         )
-    fig.update_yaxes(tickmode="linear")
+    fig.update_yaxes(tickmode="linear", tickfont=dict(color=BRAND_COLORS["slate"]))
+    fig.update_xaxes(tickfont=dict(color=BRAND_COLORS["slate"]))
     return fig
 
 
@@ -1238,6 +1254,7 @@ def apply_brand_theme() -> None:
             --surface-panel: #e7eef8;
             --surface-card: #ffffff;
             --surface-outline: #d5deeb;
+            --text-strong: #1c2734;
             --text-muted: #5b6c82;
             --text-invert: #ffffff;
         }}
@@ -1258,6 +1275,28 @@ def apply_brand_theme() -> None:
             font-family: 'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif;
             color: var(--brand-navy);
             letter-spacing: 0.01em;
+        }}
+
+        label, .stMarkdown p {{
+            color: var(--text-strong);
+        }}
+
+        [data-testid="stTextInput"] label,
+        [data-testid="stNumberInput"] label,
+        [data-testid="stSelectbox"] label,
+        [data-testid="stMultiselect"] label,
+        [data-testid="stDateInput"] label,
+        [data-testid="stRadio"] label,
+        [data-testid="stSlider"] label {{
+            font-weight: 600;
+            color: var(--text-strong);
+        }}
+
+        [data-testid="stRadio"] div[role="radiogroup"] label p,
+        [data-testid="stSelectbox"] label p,
+        [data-testid="stMultiselect"] label p,
+        [data-testid="stTextInput"] label p {{
+            color: inherit !important;
         }}
 
         .page-title {{
@@ -1416,6 +1455,24 @@ def apply_brand_theme() -> None:
             color: var(--brand-crimson);
         }}
 
+        [data-testid="stFileUploader"] label,
+        [data-testid="stFileUploader"] span,
+        [data-testid="stFileUploader"] p {{
+            color: var(--text-strong) !important;
+        }}
+
+        [data-testid="stFileUploader"] section {{
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px dashed rgba(77, 126, 168, 0.55);
+            border-radius: 14px;
+            color: var(--text-strong);
+        }}
+
+        [data-testid="stFileUploader"] section:hover {{
+            border-color: var(--brand-sky);
+            background: rgba(233, 240, 252, 0.9);
+        }}
+
         div[data-testid="stMarkdownContainer"] .risk-high {{
             color: var(--brand-crimson);
             font-weight: 600;
@@ -1470,6 +1527,29 @@ def apply_brand_theme() -> None:
 
         .help-fab:hover {{
             background: #10284f;
+        }}
+
+        button[data-testid="baseButton-secondary"],
+        div[data-testid="stFormSubmitButton"] button:not([data-testid="baseButton-primary"]) {{
+            background: var(--surface-card) !important;
+            color: var(--text-strong) !important;
+            border: 1px solid rgba(47, 60, 72, 0.25) !important;
+            box-shadow: none !important;
+        }}
+
+        button[data-testid="baseButton-secondary"]:hover,
+        div[data-testid="stFormSubmitButton"] button:not([data-testid="baseButton-primary"]):hover {{
+            border-color: var(--brand-sky) !important;
+            color: var(--brand-navy) !important;
+        }}
+
+        div[data-testid="stAlert"] {{
+            border-radius: 14px;
+            border: 1px solid rgba(47, 60, 72, 0.18);
+        }}
+
+        div[data-testid="stAlert"] p {{
+            color: var(--text-strong) !important;
         }}
         </style>
         """,
@@ -2059,8 +2139,28 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         barmode="group",
         plot_bgcolor="white",
         paper_bgcolor="white",
-        yaxis=dict(title="金額", gridcolor=BRAND_COLORS["cloud"], zerolinecolor=BRAND_COLORS["cloud"]),
-        yaxis2=dict(title="粗利率 (%)", overlaying="y", side="right", gridcolor="rgba(0,0,0,0)"),
+        xaxis=dict(
+            title="年月",
+            tickfont=dict(color=BRAND_COLORS["slate"]),
+            titlefont=dict(color=BRAND_COLORS["slate"]),
+            gridcolor=BRAND_COLORS["cloud"],
+            linecolor=BRAND_COLORS["cloud"],
+        ),
+        yaxis=dict(
+            title="金額",
+            gridcolor=BRAND_COLORS["cloud"],
+            zerolinecolor=BRAND_COLORS["cloud"],
+            tickfont=dict(color=BRAND_COLORS["slate"]),
+            titlefont=dict(color=BRAND_COLORS["slate"]),
+        ),
+        yaxis2=dict(
+            title="粗利率 (%)",
+            overlaying="y",
+            side="right",
+            gridcolor="rgba(0,0,0,0)",
+            tickfont=dict(color=BRAND_COLORS["slate"]),
+            titlefont=dict(color=BRAND_COLORS["slate"]),
+        ),
         height=480,
         margin=dict(t=60, b=40, l=10, r=10, pad=10),
     )
@@ -2096,8 +2196,28 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         barmode="relative",
         plot_bgcolor="white",
         paper_bgcolor="white",
-        yaxis=dict(title="キャッシュフロー", gridcolor=BRAND_COLORS["cloud"], zerolinecolor=BRAND_COLORS["cloud"]),
-        yaxis2=dict(title="累計 (円)", overlaying="y", side="right", gridcolor="rgba(0,0,0,0)"),
+        xaxis=dict(
+            title="年月",
+            tickfont=dict(color=BRAND_COLORS["slate"]),
+            titlefont=dict(color=BRAND_COLORS["slate"]),
+            gridcolor=BRAND_COLORS["cloud"],
+            linecolor=BRAND_COLORS["cloud"],
+        ),
+        yaxis=dict(
+            title="キャッシュフロー",
+            gridcolor=BRAND_COLORS["cloud"],
+            zerolinecolor=BRAND_COLORS["cloud"],
+            tickfont=dict(color=BRAND_COLORS["slate"]),
+            titlefont=dict(color=BRAND_COLORS["slate"]),
+        ),
+        yaxis2=dict(
+            title="累計 (円)",
+            overlaying="y",
+            side="right",
+            gridcolor="rgba(0,0,0,0)",
+            tickfont=dict(color=BRAND_COLORS["slate"]),
+            titlefont=dict(color=BRAND_COLORS["slate"]),
+        ),
         height=420,
         margin=dict(t=60, b=40, l=10, r=10, pad=10),
     )
@@ -2165,8 +2285,18 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
             bargap=0.1,
             plot_bgcolor="white",
             paper_bgcolor="white",
-            xaxis=dict(title="粗利率", gridcolor=BRAND_COLORS["cloud"]),
-            yaxis=dict(title="件数", gridcolor=BRAND_COLORS["cloud"]),
+            xaxis=dict(
+                title="粗利率",
+                gridcolor=BRAND_COLORS["cloud"],
+                tickfont=dict(color=BRAND_COLORS["slate"]),
+                titlefont=dict(color=BRAND_COLORS["slate"]),
+            ),
+            yaxis=dict(
+                title="件数",
+                gridcolor=BRAND_COLORS["cloud"],
+                tickfont=dict(color=BRAND_COLORS["slate"]),
+                titlefont=dict(color=BRAND_COLORS["slate"]),
+            ),
         )
         st.plotly_chart(hist, use_container_width=True)
 
