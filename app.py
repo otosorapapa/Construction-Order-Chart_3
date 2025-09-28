@@ -977,7 +977,13 @@ def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
 # GEN: start
 def gen_time_marks(
     tasks: pd.DataFrame, fallback_range: Tuple[date, date]
-) -> Tuple[List[pd.Timestamp], List[pd.Timestamp], Tuple[pd.Timestamp, pd.Timestamp], List[str]]:
+) -> Tuple[
+    List[pd.Timestamp],
+    List[pd.Timestamp],
+    Tuple[pd.Timestamp, pd.Timestamp],
+    List[str],
+    List[str],
+]:
     fallback_start, fallback_end = fallback_range
     start_ts = pd.Timestamp(fallback_start)
     end_ts = pd.Timestamp(fallback_end)
@@ -1007,6 +1013,7 @@ def gen_time_marks(
     major_marks: List[pd.Timestamp] = []
     major_labels: List[str] = []
     minor_marks: List[pd.Timestamp] = []
+    minor_labels: List[str] = []
 
     for month_start in months:
         month_end = month_start + relativedelta(months=1) - pd.Timedelta(days=1)
@@ -1018,13 +1025,43 @@ def gen_time_marks(
             if candidate < domain_start or candidate > domain_end or candidate > month_end:
                 continue
             minor_marks.append(candidate)
+            minor_labels.append(f"{day}日")
 
         if month_end >= domain_start and month_end <= domain_end:
             minor_marks.append(month_end)
+            minor_labels.append("月末")
 
-    minor_marks = sorted(dict.fromkeys(minor_marks))
+    dedup_minor: Dict[pd.Timestamp, str] = {}
+    for mark, label in zip(minor_marks, minor_labels):
+        dedup_minor[mark] = label
+    minor_marks = sorted(dedup_minor.keys())
+    minor_labels = [dedup_minor[mark] for mark in minor_marks]
 
-    return major_marks, minor_marks, (domain_start, domain_end), major_labels
+    return major_marks, minor_marks, (domain_start, domain_end), major_labels, minor_labels
+
+
+def _combine_tick_vals(
+    major_marks: List[pd.Timestamp], minor_marks: List[pd.Timestamp]
+) -> List[pd.Timestamp]:
+    combined = list(major_marks) + list(minor_marks)
+    combined_sorted = sorted(dict.fromkeys(combined))
+    return combined_sorted
+
+
+def _combine_tick_labels(
+    major_marks: List[pd.Timestamp],
+    major_labels: List[str],
+    minor_marks: List[pd.Timestamp],
+    minor_labels: List[str],
+) -> List[str]:
+    label_map: Dict[pd.Timestamp, str] = {
+        mark: label for mark, label in zip(major_marks, major_labels)
+    }
+    for mark, label in zip(minor_marks, minor_labels):
+        label_map[mark] = label
+
+    combined_ticks = _combine_tick_vals(major_marks, minor_marks)
+    return [label_map.get(mark, "") for mark in combined_ticks]
 
 
 # GEN: end
@@ -1178,9 +1215,13 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
                 font=dict(size=16, color=border_color or BRAND_COLORS["slate"]),
             )
 
-    major_marks, minor_marks, (range_start, range_end), major_labels = gen_time_marks(
-        df, fiscal_range
-    )
+    (
+        major_marks,
+        minor_marks,
+        (range_start, range_end),
+        major_labels,
+        minor_labels,
+    ) = gen_time_marks(df, fiscal_range)
     theme = get_active_theme()
 
     range_max = range_end + pd.Timedelta(days=1)
@@ -1200,8 +1241,10 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             range=[range_start, range_max],
             showgrid=filters.show_grid,
             tickmode="array",
-            tickvals=major_marks,
-            ticktext=major_labels,
+            tickvals=_combine_tick_vals(major_marks, minor_marks),
+            ticktext=_combine_tick_labels(
+                major_marks, major_labels, minor_marks, minor_labels
+            ),
             gridcolor=BRAND_COLORS["cloud"],
             linecolor=BRAND_COLORS["cloud"],
             tickfont=dict(color=BRAND_COLORS["slate"]),
