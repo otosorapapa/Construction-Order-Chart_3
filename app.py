@@ -1,5 +1,6 @@
 import json
 import os
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime
 from io import BytesIO
@@ -62,6 +63,29 @@ BRAND_TEMPLATE = go.layout.Template(
 )
 
 DEFAULT_BAR_COLOR = BRAND_COLORS["navy"]
+
+
+MODAL_SUPPORTED = hasattr(st, "modal")
+
+
+if MODAL_SUPPORTED:
+
+    def modal_container(title: str, key: Optional[str] = None):
+        """Return the native Streamlit modal context manager when available."""
+
+        return st.modal(title, key=key)
+
+
+else:
+
+    @contextmanager
+    def modal_container(title: str, key: Optional[str] = None):
+        """Fallback context manager that emulates a modal in older Streamlit versions."""
+
+        with st.container():
+            st.markdown(f"### {title}")
+            st.caption("この環境ではモーダル表示に対応していないため、フォームをページ内に表示しています。")
+            yield
 
 PROJECT_NUMERIC_COLUMNS = [
     "受注予定額",
@@ -1583,7 +1607,7 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
         }
         draft = {**default_draft, **st.session_state.get("project_form_draft", {})}
 
-        with st.modal("新規案件を登録", key="project_modal"):
+        with modal_container("新規案件を登録", key="project_modal"):
             st.markdown("案件の基本情報を入力してください。必須項目は * で示しています。")
             with st.form("project_create_form"):
                 id_value = st.text_input("* 案件ID", value=draft.get("id", ""))
@@ -2207,7 +2231,7 @@ def render_settings_tab(masters: Dict[str, List[str]]) -> None:
         base_df["active"] = base_df.get("active", True)
         if st.session_state.get(modal_flag):
             draft = st.session_state.get(draft_key, {"name": "", "active": True})
-            with st.modal(f"{label}を新規追加", key=f"{key}_modal"):
+            with modal_container(f"{label}を新規追加", key=f"{key}_modal"):
                 with st.form(f"{key}_form"):
                     name_value = st.text_input("* 名称", value=draft.get("name", ""))
                     active_value = st.checkbox("有効", value=bool(draft.get("active", True)))
