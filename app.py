@@ -63,6 +63,185 @@ BRAND_TEMPLATE = go.layout.Template(
     )
 )
 
+THEME_PRESETS = {
+    "ライト": {
+        "slug": "light",
+        "surface_bg": "#f7f9fc",
+        "surface_panel": "#e7eef8",
+        "surface_card": "#ffffff",
+        "surface_outline": "#d5deeb",
+        "text_strong": "#1c2734",
+        "text_muted": "#5b6c82",
+        "text_invert": "#ffffff",
+        "heading_color": BRAND_COLORS["navy"],
+        "panel_bg": "linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(231, 238, 248, 0.88))",
+        "panel_shadow": "0 22px 44px rgba(11, 31, 58, 0.14)",
+        "panel_border": "1px solid #d5deeb",
+        "kpi_card_bg": "linear-gradient(145deg, rgba(30, 76, 156, 0.95), rgba(11, 31, 58, 0.95))",
+        "kpi_card_shadow": "0 18px 36px rgba(11, 31, 58, 0.16)",
+        "kpi_card_border": "1px solid rgba(12, 31, 58, 0.18)",
+        "kpi_icon_bg": "rgba(255, 255, 255, 0.18)",
+        "kpi_icon_color": "#dce7f8",
+        "kpi_title_color": "rgba(255, 255, 255, 0.75)",
+        "kpi_subtitle_color": "rgba(255, 255, 255, 0.7)",
+        "fiscal_pill_bg": "rgba(30, 76, 156, 0.12)",
+        "fiscal_pill_color": BRAND_COLORS["navy"],
+        "primary_button_bg": "linear-gradient(145deg, var(--brand-sky), var(--brand-navy))",
+        "primary_button_hover": "linear-gradient(145deg, #4d86c0, #10274d)",
+        "primary_button_color": "#ffffff",
+        "primary_button_shadow": "0 14px 24px rgba(11, 31, 58, 0.18)",
+        "primary_button_hover_shadow": "0 14px 24px rgba(11, 31, 58, 0.26)",
+        "input_bg": "rgba(255, 255, 255, 0.96)",
+        "input_border": "1px solid rgba(47, 60, 72, 0.18)",
+        "input_shadow": "inset 0 1px 2px rgba(11, 31, 58, 0.08)",
+        "quick_action_bg": "rgba(30, 76, 156, 0.12)",
+        "quick_action_color": "#3a4553",
+        "quick_action_border": "1px solid rgba(30, 76, 156, 0.3)",
+        "quick_action_hover_shadow": "0 14px 28px rgba(30, 76, 156, 0.18)",
+        "radio_bg": "rgba(255, 255, 255, 0.92)",
+        "radio_border": "1px solid rgba(30, 76, 156, 0.22)",
+        "radio_text": "var(--text-strong)",
+        "radio_hover_bg": "rgba(77, 126, 168, 0.16)",
+        "radio_hover_border": "rgba(77, 126, 168, 0.38)",
+        "radio_hover_color": "var(--brand-navy)",
+        "radio_hover_shadow": "0 8px 18px rgba(11, 31, 58, 0.12)",
+        "radio_checked_bg": "linear-gradient(135deg, rgba(30, 76, 156, 0.88), rgba(11, 31, 58, 0.92))",
+        "radio_checked_border": "rgba(11, 31, 58, 0.65)",
+        "radio_checked_color": "var(--text-invert)",
+        "radio_checked_shadow": "0 10px 22px rgba(11, 31, 58, 0.22)",
+        "table_header_bg": "#1e3a6f",
+        "table_header_color": "#ffffff",
+        "table_stripe_odd": "#eef3fb",
+        "table_stripe_even": "#ffffff",
+        "table_hover": "rgba(77, 126, 168, 0.16)",
+        "legend_bg": "rgba(255,255,255,0.85)",
+        "chart_paper": "#ffffff",
+        "chart_plot": "#ffffff",
+        "chart_grid": BRAND_COLORS["cloud"],
+    },
+    "ダーク": {
+        "slug": "dark",
+        "surface_bg": "#0f172a",
+        "surface_panel": "#1e293b",
+        "surface_card": "#111827",
+        "surface_outline": "#1f2a3d",
+        "text_strong": "#e2e8f0",
+        "text_muted": "#94a3b8",
+        "text_invert": "#f8fafc",
+        "heading_color": "#f8fafc",
+        "panel_bg": "linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.95))",
+        "panel_shadow": "0 22px 44px rgba(2, 6, 23, 0.6)",
+        "panel_border": "1px solid rgba(148, 163, 184, 0.25)",
+        "kpi_card_bg": "linear-gradient(145deg, rgba(77, 126, 168, 0.65), rgba(11, 31, 58, 0.92))",
+        "kpi_card_shadow": "0 18px 36px rgba(2, 6, 23, 0.55)",
+        "kpi_card_border": "1px solid rgba(148, 163, 184, 0.25)",
+        "kpi_icon_bg": "rgba(148, 163, 184, 0.2)",
+        "kpi_icon_color": "#e2e8f0",
+        "kpi_title_color": "rgba(226, 232, 240, 0.75)",
+        "kpi_subtitle_color": "rgba(226, 232, 240, 0.7)",
+        "fiscal_pill_bg": "rgba(77, 126, 168, 0.25)",
+        "fiscal_pill_color": "#bfdbfe",
+        "primary_button_bg": "linear-gradient(145deg, #3b82f6, #1e40af)",
+        "primary_button_hover": "linear-gradient(145deg, #2563eb, #172554)",
+        "primary_button_color": "#ffffff",
+        "primary_button_shadow": "0 14px 28px rgba(2, 6, 23, 0.55)",
+        "primary_button_hover_shadow": "0 14px 28px rgba(2, 6, 23, 0.68)",
+        "input_bg": "rgba(15, 23, 42, 0.85)",
+        "input_border": "1px solid rgba(148, 163, 184, 0.35)",
+        "input_shadow": "inset 0 1px 2px rgba(2, 6, 23, 0.4)",
+        "quick_action_bg": "rgba(59, 130, 246, 0.18)",
+        "quick_action_color": "#e2e8f0",
+        "quick_action_border": "1px solid rgba(59, 130, 246, 0.45)",
+        "quick_action_hover_shadow": "0 14px 28px rgba(2, 6, 23, 0.6)",
+        "radio_bg": "rgba(15, 23, 42, 0.85)",
+        "radio_border": "1px solid rgba(148, 163, 184, 0.4)",
+        "radio_text": "var(--text-strong)",
+        "radio_hover_bg": "rgba(59, 130, 246, 0.25)",
+        "radio_hover_border": "rgba(59, 130, 246, 0.6)",
+        "radio_hover_color": "#e2e8f0",
+        "radio_hover_shadow": "0 8px 18px rgba(2, 6, 23, 0.45)",
+        "radio_checked_bg": "linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.85))",
+        "radio_checked_border": "rgba(59, 130, 246, 0.9)",
+        "radio_checked_color": "#0b1120",
+        "radio_checked_shadow": "0 10px 22px rgba(2, 6, 23, 0.55)",
+        "table_header_bg": "#1e293b",
+        "table_header_color": "#f1f5f9",
+        "table_stripe_odd": "#1f2937",
+        "table_stripe_even": "#111827",
+        "table_hover": "rgba(59, 130, 246, 0.22)",
+        "legend_bg": "rgba(15,23,42,0.85)",
+        "chart_paper": "#0f172a",
+        "chart_plot": "#1e293b",
+        "chart_grid": "rgba(148, 163, 184, 0.28)",
+    },
+    "セピア": {
+        "slug": "sepia",
+        "surface_bg": "#f4ede1",
+        "surface_panel": "#efe2d1",
+        "surface_card": "#fff8ee",
+        "surface_outline": "#d9c7a6",
+        "text_strong": "#3f2f1c",
+        "text_muted": "#8a6b3b",
+        "text_invert": "#fff8ee",
+        "heading_color": "#6d4a1b",
+        "panel_bg": "linear-gradient(180deg, rgba(255, 248, 238, 0.96), rgba(239, 226, 209, 0.9))",
+        "panel_shadow": "0 22px 44px rgba(110, 86, 46, 0.18)",
+        "panel_border": "1px solid rgba(180, 153, 104, 0.45)",
+        "kpi_card_bg": "linear-gradient(145deg, rgba(166, 124, 82, 0.95), rgba(109, 76, 40, 0.95))",
+        "kpi_card_shadow": "0 18px 36px rgba(90, 62, 32, 0.28)",
+        "kpi_card_border": "1px solid rgba(120, 84, 45, 0.35)",
+        "kpi_icon_bg": "rgba(255, 244, 224, 0.2)",
+        "kpi_icon_color": "#fdf2d7",
+        "kpi_title_color": "rgba(255, 244, 224, 0.75)",
+        "kpi_subtitle_color": "rgba(255, 244, 224, 0.7)",
+        "fiscal_pill_bg": "rgba(201, 162, 39, 0.18)",
+        "fiscal_pill_color": "#8a6b3b",
+        "primary_button_bg": "linear-gradient(145deg, #d29b45, #8d5e1a)",
+        "primary_button_hover": "linear-gradient(145deg, #bf7f24, #6d4412)",
+        "primary_button_color": "#fff8ee",
+        "primary_button_shadow": "0 14px 24px rgba(120, 84, 45, 0.24)",
+        "primary_button_hover_shadow": "0 14px 24px rgba(120, 84, 45, 0.32)",
+        "input_bg": "rgba(255, 248, 238, 0.96)",
+        "input_border": "1px solid rgba(158, 128, 74, 0.35)",
+        "input_shadow": "inset 0 1px 2px rgba(120, 84, 45, 0.15)",
+        "quick_action_bg": "rgba(210, 155, 69, 0.18)",
+        "quick_action_color": "#5c4324",
+        "quick_action_border": "1px solid rgba(210, 155, 69, 0.3)",
+        "quick_action_hover_shadow": "0 14px 28px rgba(120, 84, 45, 0.18)",
+        "radio_bg": "rgba(255, 248, 238, 0.9)",
+        "radio_border": "1px solid rgba(201, 162, 39, 0.25)",
+        "radio_text": "var(--text-strong)",
+        "radio_hover_bg": "rgba(201, 162, 39, 0.22)",
+        "radio_hover_border": "rgba(180, 140, 39, 0.45)",
+        "radio_hover_color": "#6d4a1b",
+        "radio_hover_shadow": "0 8px 18px rgba(120, 84, 45, 0.18)",
+        "radio_checked_bg": "linear-gradient(135deg, rgba(210, 155, 69, 0.88), rgba(141, 94, 26, 0.92))",
+        "radio_checked_border": "rgba(141, 94, 26, 0.7)",
+        "radio_checked_color": "#fff8ee",
+        "radio_checked_shadow": "0 10px 22px rgba(120, 84, 45, 0.28)",
+        "table_header_bg": "#8d5e1a",
+        "table_header_color": "#fff8ee",
+        "table_stripe_odd": "#f5e8d4",
+        "table_stripe_even": "#fffaf1",
+        "table_hover": "rgba(210, 155, 69, 0.22)",
+        "legend_bg": "rgba(255, 248, 238, 0.85)",
+        "chart_paper": "#fff8ee",
+        "chart_plot": "#fff8ee",
+        "chart_grid": "rgba(180, 153, 104, 0.35)",
+    },
+}
+
+
+def get_active_theme_name() -> str:
+    theme_name = st.session_state.get("color_theme", "ライト")
+    if theme_name not in THEME_PRESETS:
+        theme_name = "ライト"
+    return theme_name
+
+
+def get_active_theme() -> Dict[str, str]:
+    return THEME_PRESETS[get_active_theme_name()]
+
 DEFAULT_BAR_COLOR = BRAND_COLORS["navy"]
 
 
@@ -143,6 +322,7 @@ class FilterState:
     search_text: str
     search_targets: List[str]
     color_key: str
+    color_theme: str
     show_grid: bool
     label_density: str
     bar_color: str
@@ -703,6 +883,8 @@ def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
     if df.empty:
         return df.style
 
+    theme = get_active_theme()
+
     def highlight(row: pd.Series) -> List[str]:
         styles: List[str] = []
         for col in row.index:
@@ -735,8 +917,8 @@ def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
                 {
                     "selector": "th",
                     "props": [
-                        ("background-color", "#1e3a6f"),
-                        ("color", "#ffffff"),
+                        ("background-color", theme["table_header_bg"]),
+                        ("color", theme["table_header_color"]),
                         ("font-weight", "600"),
                         ("border-bottom", "1px solid #d5deeb"),
                     ],
@@ -744,13 +926,13 @@ def style_risk_table(df: pd.DataFrame) -> "pd.io.formats.style.Styler":
                 {
                     "selector": "tbody tr:nth-child(odd)",
                     "props": [
-                        ("background-color", "#eef3fb"),
+                        ("background-color", theme["table_stripe_odd"]),
                     ],
                 },
                 {
                     "selector": "tbody tr:nth-child(even)",
                     "props": [
-                        ("background-color", "#ffffff"),
+                        ("background-color", theme["table_stripe_even"]),
                     ],
                 }
             ]
@@ -782,7 +964,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
             plot_bgcolor="white",
             paper_bgcolor="white",
         )
-        return fig
+        return apply_plotly_theme(fig)
 
     color_key = filters.color_key
     if color_key in df.columns:
@@ -1027,7 +1209,7 @@ def create_timeline(df: pd.DataFrame, filters: FilterState, fiscal_range: Tuple[
         )
     fig.update_yaxes(tickmode="linear", tickfont=dict(color=BRAND_COLORS["slate"]))
     fig.update_xaxes(tickfont=dict(color=BRAND_COLORS["slate"]))
-    return fig
+    return apply_plotly_theme(fig)
 
 
 def validate_projects(df: pd.DataFrame) -> Tuple[bool, List[str]]:
@@ -1155,6 +1337,16 @@ def render_control_panel(df: pd.DataFrame, masters: Dict[str, List[str]]) -> Fil
 
         with col_display:
             st.markdown("#### 表示設定")
+            theme_options = list(THEME_PRESETS.keys())
+            default_theme = get_active_theme_name()
+            color_theme = st.selectbox(
+                "カラーモード",
+                theme_options,
+                index=theme_options.index(default_theme),
+                help="アプリ全体の配色モードを切り替えます。",
+                key="color_theme_select",
+            )
+            st.session_state["color_theme"] = color_theme
             color_key = st.selectbox(
                 "色分けキー",
                 ["ステータス", "工種", "元請区分"],
@@ -1361,6 +1553,7 @@ def render_control_panel(df: pd.DataFrame, masters: Dict[str, List[str]]) -> Fil
         search_text=search_text,
         search_targets=search_targets,
         color_key=color_key,
+        color_theme=color_theme,
         show_grid=show_grid,
         label_density=label_density,
         bar_color=bar_color,
@@ -1368,8 +1561,160 @@ def render_control_panel(df: pd.DataFrame, masters: Dict[str, List[str]]) -> Fil
 
 
 def apply_brand_theme() -> None:
+    if "color_theme" not in st.session_state:
+        st.session_state["color_theme"] = "ライト"
+
+    theme_name = get_active_theme_name()
+    active_theme = THEME_PRESETS[theme_name]
+    default_theme = THEME_PRESETS["ライト"]
+
+    theme_overrides: List[str] = []
+    for config in THEME_PRESETS.values():
+        slug = config["slug"]
+        theme_overrides.append(
+            f"""
+        :root[data-theme=\"{slug}\"] {{
+            --surface-bg: {config['surface_bg']};
+            --surface-panel: {config['surface_panel']};
+            --surface-card: {config['surface_card']};
+            --surface-outline: {config['surface_outline']};
+            --text-strong: {config['text_strong']};
+            --text-muted: {config['text_muted']};
+            --text-invert: {config['text_invert']};
+            --heading-color: {config['heading_color']};
+        }}
+
+        [data-theme=\"{slug}\"] html,
+        [data-theme=\"{slug}\"] body,
+        [data-theme=\"{slug}\"] [data-testid=\"stAppViewContainer\"],
+        [data-theme=\"{slug}\"] [data-testid=\"block-container\"] {{
+            background-color: {config['surface_bg']} !important;
+            color: {config['text_strong']};
+        }}
+
+        [data-theme=\"{slug}\"] h1,
+        [data-theme=\"{slug}\"] h2,
+        [data-theme=\"{slug}\"] h3,
+        [data-theme=\"{slug}\"] h4 {{
+            color: {config['heading_color']};
+        }}
+
+        [data-theme=\"{slug}\"] .kpi-card {{
+            background: {config['kpi_card_bg']};
+            box-shadow: {config['kpi_card_shadow']};
+            border-color: {config['kpi_card_border']};
+            color: {config['text_invert']};
+        }}
+
+        [data-theme=\"{slug}\"] .kpi-icon {{
+            background: {config['kpi_icon_bg']};
+            color: {config['kpi_icon_color']};
+        }}
+
+        [data-theme=\"{slug}\"] .kpi-title {{
+            color: {config['kpi_title_color']};
+        }}
+
+        [data-theme=\"{slug}\"] .kpi-subtitle {{
+            color: {config['kpi_subtitle_color']};
+        }}
+
+        [data-theme=\"{slug}\"] .fiscal-pill {{
+            background: {config['fiscal_pill_bg']};
+            color: {config['fiscal_pill_color']};
+        }}
+
+        [data-theme=\"{slug}\"] .control-panel {{
+            background: {config['panel_bg']};
+            box-shadow: {config['panel_shadow']};
+            border: {config['panel_border']};
+        }}
+
+        [data-theme=\"{slug}\"] .control-panel .stButton > button {{
+            background: {config['primary_button_bg']};
+            color: {config['primary_button_color']};
+            box-shadow: {config['primary_button_shadow']};
+        }}
+
+        [data-theme=\"{slug}\"] .control-panel .stButton > button:hover {{
+            background: {config['primary_button_hover']};
+            box-shadow: {config['primary_button_hover_shadow']};
+        }}
+
+        [data-theme=\"{slug}\"] .control-panel div[data-baseweb=\"select\"],
+        [data-theme=\"{slug}\"] .control-panel div[data-baseweb=\"input\"],
+        [data-theme=\"{slug}\"] .control-panel div[data-baseweb=\"textarea\"],
+        [data-theme=\"{slug}\"] .control-panel [data-testid=\"stDateInput\"] div[data-baseweb=\"input\"],
+        [data-theme=\"{slug}\"] .control-panel [data-testid=\"stColorPicker\"] div[data-testid=\"stColorPickerValue\"] {{
+            background: {config['input_bg']};
+            border: {config['input_border']};
+            box-shadow: {config['input_shadow']};
+            color: {config['text_strong']};
+        }}
+
+        [data-theme=\"{slug}\"] .quick-actions .stButton > button {{
+            background: {config['quick_action_bg']} !important;
+            color: {config['quick_action_color']} !important;
+            border: {config['quick_action_border']} !important;
+            box-shadow: none !important;
+        }}
+
+        [data-theme=\"{slug}\"] .quick-actions .stButton > button:hover {{
+            box-shadow: {config['quick_action_hover_shadow']} !important;
+        }}
+
+        [data-theme=\"{slug}\"] [data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label {{
+            background: {config['radio_bg']};
+            border: {config['radio_border']};
+            color: {config['radio_text']} !important;
+        }}
+
+        [data-theme=\"{slug}\"] [data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label:hover {{
+            background: {config['radio_hover_bg']};
+            border: {config['radio_hover_border']};
+            color: {config['radio_hover_color']} !important;
+            box-shadow: {config['radio_hover_shadow']};
+        }}
+
+        [data-theme=\"{slug}\"] [data-testid=\"stRadio\"] div[role=\"radiogroup\"] > label:has(div[aria-checked=\"true\"]) {{
+            background: {config['radio_checked_bg']};
+            border: {config['radio_checked_border']};
+            color: {config['radio_checked_color']} !important;
+            box-shadow: {config['radio_checked_shadow']};
+        }}
+
+        [data-theme=\"{slug}\"] [data-testid=\"stDataFrame\"] table thead tr th {{
+            background: {config['table_header_bg']};
+            color: {config['table_header_color']} !important;
+        }}
+
+        [data-theme=\"{slug}\"] [data-testid=\"stDataFrame\"] table tbody tr:nth-child(odd) {{
+            background-color: {config['table_stripe_odd']};
+        }}
+
+        [data-theme=\"{slug}\"] [data-testid=\"stDataFrame\"] table tbody tr:nth-child(even) {{
+            background-color: {config['table_stripe_even']};
+        }}
+
+        [data-theme=\"{slug}\"] [data-testid=\"stDataFrame\"] table tbody tr:hover {{
+            background-color: {config['table_hover']} !important;
+        }}
+        """
+        )
+
+    overrides_css = "\n".join(theme_overrides)
+
     st.markdown(
         f"""
+        <script>
+        const targetDoc = window.parent?.document || document;
+        if (targetDoc?.documentElement) {{
+            targetDoc.documentElement.setAttribute('data-theme', '{active_theme['slug']}');
+        }}
+        if (targetDoc?.body) {{
+            targetDoc.body.setAttribute('data-theme', '{active_theme['slug']}');
+        }}
+        </script>
         <style>
         :root {{
             --brand-navy: {BRAND_COLORS['navy']};
@@ -1380,18 +1725,19 @@ def apply_brand_theme() -> None:
             --brand-sky: {BRAND_COLORS['sky']};
             --brand-crimson: {BRAND_COLORS['crimson']};
             --accent-green: #2F9E5B;
-            --surface-bg: #f7f9fc;
-            --surface-panel: #e7eef8;
-            --surface-card: #ffffff;
-            --surface-outline: #d5deeb;
-            --text-strong: #1c2734;
-            --text-muted: #5b6c82;
-            --text-invert: #ffffff;
+            --surface-bg: {default_theme['surface_bg']};
+            --surface-panel: {default_theme['surface_panel']};
+            --surface-card: {default_theme['surface_card']};
+            --surface-outline: {default_theme['surface_outline']};
+            --text-strong: {default_theme['text_strong']};
+            --text-muted: {default_theme['text_muted']};
+            --text-invert: {default_theme['text_invert']};
+            --heading-color: {default_theme['heading_color']};
         }}
 
         html, body, [data-testid="stAppViewContainer"], [data-testid="block-container"] {{
             background-color: var(--surface-bg) !important;
-            color: var(--brand-slate);
+            color: var(--text-strong);
             font-family: 'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif;
         }}
 
@@ -1403,7 +1749,7 @@ def apply_brand_theme() -> None:
 
         h1, h2, h3, h4 {{
             font-family: 'Noto Sans JP', 'Hiragino Sans', 'Segoe UI', sans-serif;
-            color: var(--brand-navy);
+            color: var(--heading-color);
             letter-spacing: 0.01em;
         }}
 
@@ -1442,11 +1788,12 @@ def apply_brand_theme() -> None:
         }}
 
         .kpi-card {{
-            background: linear-gradient(145deg, rgba(30, 76, 156, 0.95), rgba(11, 31, 58, 0.95));
+            background: var(--kpi-card-bg);
             border-radius: 18px;
             padding: 1.3rem 1.5rem;
-            box-shadow: 0 18px 36px rgba(11, 31, 58, 0.16);
-            border: 1px solid rgba(12, 31, 58, 0.18);
+            box-shadow: var(--kpi-card-shadow);
+            border: 1px solid transparent;
+            border-color: var(--kpi-card-border);
             display: flex;
             gap: 1rem;
             align-items: center;
@@ -1466,13 +1813,13 @@ def apply_brand_theme() -> None:
             display: grid;
             place-items: center;
             font-size: 1.6rem;
-            background: rgba(255, 255, 255, 0.18);
-            color: #dce7f8;
+            background: var(--kpi-icon-bg);
+            color: var(--kpi-icon-color);
         }}
 
         .kpi-title {{
             font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.75);
+            color: var(--kpi-title-color);
             text-transform: uppercase;
             letter-spacing: 0.08em;
         }}
@@ -1486,47 +1833,48 @@ def apply_brand_theme() -> None:
 
         .kpi-subtitle {{
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: var(--kpi-subtitle-color);
         }}
 
         .fiscal-pill {{
             display: inline-flex;
             align-items: center;
             gap: 0.3rem;
-            background: rgba(30, 76, 156, 0.12);
+            background: var(--fiscal-pill-bg);
             border-radius: 999px;
             padding: 0.35rem 0.9rem;
             font-size: 0.85rem;
-            color: var(--brand-navy);
+            color: var(--fiscal-pill-color);
             box-shadow: inset 0 0 0 1px rgba(30, 76, 156, 0.25);
         }}
 
         .control-panel {{
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(231, 238, 248, 0.88));
+            background: var(--panel-bg);
             border-radius: 22px;
             padding: 1.1rem 1.4rem 1.25rem;
-            border: 1px solid var(--surface-outline);
-            box-shadow: 0 22px 44px rgba(11, 31, 58, 0.14);
+            border: var(--panel-border);
+            box-shadow: var(--panel-shadow);
             margin-bottom: 1.2rem;
         }}
 
         .control-panel h4,
         .control-panel h5,
         .control-panel label {{
-            color: var(--brand-slate);
+            color: var(--text-strong);
         }}
 
         .control-panel .stButton > button {{
             border-radius: 14px;
-            background: linear-gradient(145deg, var(--brand-sky), var(--brand-navy));
-            color: white;
+            background: var(--primary-button-bg);
+            color: var(--primary-button-color);
             border: none;
             font-weight: 600;
-            box-shadow: 0 14px 24px rgba(11, 31, 58, 0.18);
+            box-shadow: var(--primary-button-shadow);
         }}
 
         .control-panel .stButton > button:hover {{
-            background: linear-gradient(145deg, #4d86c0, #10274d);
+            background: var(--primary-button-hover);
+            box-shadow: var(--primary-button-hover-shadow);
         }}
 
         .control-panel div[data-baseweb="select"],
@@ -1534,11 +1882,11 @@ def apply_brand_theme() -> None:
         .control-panel div[data-baseweb="textarea"],
         .control-panel [data-testid="stDateInput"] div[data-baseweb="input"],
         .control-panel [data-testid="stColorPicker"] div[data-testid="stColorPickerValue"] {{
-            background: rgba(255, 255, 255, 0.96);
+            background: var(--input-bg);
             border-radius: 12px;
-            border: 1px solid rgba(47, 60, 72, 0.18);
+            border: var(--input-border);
             color: var(--text-strong);
-            box-shadow: inset 0 1px 2px rgba(11, 31, 58, 0.08);
+            box-shadow: var(--input-shadow);
         }}
 
         .control-panel div[data-baseweb="select"] span,
@@ -1558,9 +1906,9 @@ def apply_brand_theme() -> None:
         [data-testid="stRadio"] div[role="radiogroup"] > label {{
             border-radius: 999px;
             padding: 0.35rem 0.85rem;
-            border: 1px solid rgba(30, 76, 156, 0.22);
-            background: rgba(255, 255, 255, 0.92);
-            color: var(--text-strong) !important;
+            border: var(--radio-border);
+            background: var(--radio-bg);
+            color: var(--radio-text) !important;
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
@@ -1569,17 +1917,17 @@ def apply_brand_theme() -> None:
         }}
 
         [data-testid="stRadio"] div[role="radiogroup"] > label:hover {{
-            background: rgba(77, 126, 168, 0.16);
-            border-color: rgba(77, 126, 168, 0.38);
-            color: var(--brand-navy) !important;
-            box-shadow: 0 8px 18px rgba(11, 31, 58, 0.12);
+            background: var(--radio-hover-bg);
+            border: var(--radio-hover-border);
+            color: var(--radio-hover-color) !important;
+            box-shadow: var(--radio-hover-shadow);
         }}
 
         [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) {{
-            background: linear-gradient(135deg, rgba(30, 76, 156, 0.88), rgba(11, 31, 58, 0.92));
-            border-color: rgba(11, 31, 58, 0.65);
-            color: var(--text-invert) !important;
-            box-shadow: 0 10px 22px rgba(11, 31, 58, 0.22);
+            background: var(--radio-checked-bg);
+            border: var(--radio-checked-border);
+            color: var(--radio-checked-color) !important;
+            box-shadow: var(--radio-checked-shadow);
         }}
 
         [data-testid="stRadio"] div[role="radiogroup"] > label div[data-testid="stMarkdownContainer"] p,
@@ -1588,35 +1936,23 @@ def apply_brand_theme() -> None:
             margin: 0;
         }}
 
-        [data-testid="stRadio"] div[role="radiogroup"] > label:not(:has(div[aria-checked="true"])) > div:nth-of-type(2),
-        [data-testid="stRadio"] div[role="radiogroup"] > label:not(:has(div[aria-checked="true"])) > div:nth-of-type(2) *,
-        [data-testid="stRadio"] div[role="radiogroup"] > label:not(:has(div[aria-checked="true"])) div[data-testid="stMarkdownContainer"] {{
-            color: #3b4350 !important;
-        }}
-
-        [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) > div:nth-of-type(2),
-        [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) > div:nth-of-type(2) *,
-        [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) div[data-testid="stMarkdownContainer"] p,
-        [data-testid="stRadio"] div[role="radiogroup"] > label:has(div[aria-checked="true"]) div[data-testid="stMarkdownContainer"] span {{
-            color: var(--text-invert) !important;
-        }}
 
         .quick-actions {{
             margin-top: 0.4rem;
         }}
 
         .quick-actions .stButton > button {{
-            background: rgba(30, 76, 156, 0.12) !important;
-            color: #3a4553 !important;
+            background: var(--quick_action_bg) !important;
+            color: var(--quick_action_color) !important;
             border-radius: 12px !important;
-            border: 1px solid rgba(30, 76, 156, 0.3) !important;
+            border: var(--quick_action_border) !important;
             font-weight: 600 !important;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }}
 
         .quick-actions .stButton > button:hover {{
             transform: translateY(-1px);
-            box-shadow: 0 14px 28px rgba(30, 76, 156, 0.18) !important;
+            box-shadow: var(--quick_action_hover_shadow) !important;
         }}
 
         .quick-hint {{
@@ -1664,15 +2000,15 @@ def apply_brand_theme() -> None:
         }}
 
         [data-testid="stFileUploader"] section {{
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px dashed rgba(77, 126, 168, 0.55);
+            background: var(--surface-card);
+            border: 1px dashed var(--surface-outline);
             border-radius: 14px;
             color: var(--text-strong);
         }}
 
         [data-testid="stFileUploader"] section:hover {{
             border-color: var(--brand-sky);
-            background: rgba(233, 240, 252, 0.9);
+            background: var(--surface-panel);
         }}
 
         div[data-testid="stMarkdownContainer"] .risk-high {{
@@ -1687,7 +2023,7 @@ def apply_brand_theme() -> None:
 
         .element-container:has(.stDataFrame) {{
             border-radius: 18px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(231, 238, 248, 0.92));
+            background: var(--surface-card);
             padding: 0.6rem 0.6rem 0.2rem;
             box-shadow: 0 10px 26px rgba(11, 31, 58, 0.1);
             margin-bottom: 1.2rem;
@@ -1695,22 +2031,22 @@ def apply_brand_theme() -> None:
         }}
 
         [data-testid="stDataFrame"] table thead tr th {{
-            background: linear-gradient(135deg, rgba(30, 76, 156, 0.95), rgba(11, 31, 58, 0.95));
-            color: var(--text-invert) !important;
+            background: var(--table-header-bg);
+            color: var(--table-header-color) !important;
             font-weight: 600 !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.25) !important;
         }}
 
         [data-testid="stDataFrame"] table tbody tr:nth-child(odd) {{
-            background-color: rgba(239, 244, 252, 0.85);
+            background-color: var(--table-stripe-odd);
         }}
 
         [data-testid="stDataFrame"] table tbody tr:nth-child(even) {{
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: var(--table-stripe-even);
         }}
 
         [data-testid="stDataFrame"] table tbody tr:hover {{
-            background-color: rgba(77, 126, 168, 0.16) !important;
+            background-color: var(--table-hover) !important;
         }}
 
         .help-fab {{
@@ -1735,28 +2071,63 @@ def apply_brand_theme() -> None:
         div[data-testid="stFormSubmitButton"] button:not([data-testid="baseButton-primary"]) {{
             background: var(--surface-card) !important;
             color: var(--text-strong) !important;
-            border: 1px solid rgba(47, 60, 72, 0.25) !important;
+            border: 1px solid var(--surface-outline) !important;
             box-shadow: none !important;
         }}
 
         button[data-testid="baseButton-secondary"]:hover,
         div[data-testid="stFormSubmitButton"] button:not([data-testid="baseButton-primary"]):hover {{
             border-color: var(--brand-sky) !important;
-            color: var(--brand-navy) !important;
+            color: var(--heading-color) !important;
         }}
 
         div[data-testid="stAlert"] {{
             border-radius: 14px;
-            border: 1px solid rgba(47, 60, 72, 0.18);
+            border: 1px solid var(--surface-outline);
         }}
 
         div[data-testid="stAlert"] p {{
             color: var(--text-strong) !important;
         }}
+
+        {overrides_css}
         </style>
         """,
         unsafe_allow_html=True,
     )
+
+    BRAND_TEMPLATE.layout.font.color = active_theme["text_strong"]
+    BRAND_TEMPLATE.layout.paper_bgcolor = active_theme["chart_paper"]
+    BRAND_TEMPLATE.layout.plot_bgcolor = active_theme["chart_plot"]
+    legend_layout = BRAND_TEMPLATE.layout.legend or go.layout.Legend()
+    legend_layout.bgcolor = active_theme["legend_bg"]
+    legend_layout.font = go.layout.Font(color=active_theme["text_strong"])
+    BRAND_TEMPLATE.layout.legend = legend_layout
+
+
+def apply_plotly_theme(fig: go.Figure) -> go.Figure:
+    theme = get_active_theme()
+    fig.update_layout(
+        paper_bgcolor=theme["chart_paper"],
+        plot_bgcolor=theme["chart_plot"],
+        font=dict(color=theme["text_strong"]),
+        legend=dict(bgcolor=theme["legend_bg"], font=dict(color=theme["text_strong"])),
+    )
+    fig.update_xaxes(
+        tickfont=dict(color=theme["text_strong"]),
+        titlefont=dict(color=theme["text_strong"]),
+        gridcolor=theme["chart_grid"],
+        zerolinecolor=theme["chart_grid"],
+        linecolor=theme["chart_grid"],
+    )
+    fig.update_yaxes(
+        tickfont=dict(color=theme["text_strong"]),
+        titlefont=dict(color=theme["text_strong"]),
+        gridcolor=theme["chart_grid"],
+        zerolinecolor=theme["chart_grid"],
+        linecolor=theme["chart_grid"],
+    )
+    return fig
 
 
 def render_page_header(fiscal_year: int, fiscal_range: Tuple[date, date]) -> None:
@@ -2371,6 +2742,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         height=480,
         margin=dict(t=60, b=40, l=10, r=10, pad=10),
     )
+    trend_fig = apply_plotly_theme(trend_fig)
     st.plotly_chart(trend_fig, use_container_width=True)
 
     st.markdown("### キャッシュフロー見通し")
@@ -2428,6 +2800,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         height=420,
         margin=dict(t=60, b=40, l=10, r=10, pad=10),
     )
+    cash_fig = apply_plotly_theme(cash_fig)
     st.plotly_chart(cash_fig, use_container_width=True)
 
     col1, col2 = st.columns(2)
@@ -2451,6 +2824,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
                 template=BRAND_TEMPLATE,
                 showlegend=False,
             )
+            pie1 = apply_plotly_theme(pie1)
             st.plotly_chart(pie1, use_container_width=True)
     with col2:
         if enriched.empty:
@@ -2472,6 +2846,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
                 template=BRAND_TEMPLATE,
                 showlegend=False,
             )
+            pie2 = apply_plotly_theme(pie2)
             st.plotly_chart(pie2, use_container_width=True)
 
     if enriched.empty:
@@ -2505,6 +2880,7 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
                 titlefont=dict(color=BRAND_COLORS["slate"]),
             ),
         )
+        hist = apply_plotly_theme(hist)
         st.plotly_chart(hist, use_container_width=True)
 
     if not enriched.empty:
