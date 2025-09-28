@@ -1477,7 +1477,7 @@ def apply_brand_theme() -> None:
 
         .quick-actions .stButton > button {{
             background: rgba(30, 76, 156, 0.12) !important;
-            color: var(--brand-navy) !important;
+            color: #3a4553 !important;
             border-radius: 12px !important;
             border: 1px solid rgba(30, 76, 156, 0.3) !important;
             font-weight: 600 !important;
