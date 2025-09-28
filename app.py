@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -234,6 +235,31 @@ THEME_PRESETS = {
 }
 
 
+QUICK_TASK_TEMPLATES = {
+    "建築基礎（14日）": {
+        "task_name": "建築基礎工事",
+        "category": "建築",
+        "status": "施工中",
+        "duration": 14,
+        "notes": "基礎配筋・型枠・コンクリート打設までを一括管理",
+    },
+    "内装仕上げ（21日）": {
+        "task_name": "内装仕上げ",
+        "category": "建築",
+        "status": "受注",
+        "duration": 21,
+        "notes": "什器手配と仕上材の納期確認を事前に実施",
+    },
+    "橋脚補修（10日）": {
+        "task_name": "橋脚補修工程",
+        "category": "土木",
+        "status": "見積",
+        "duration": 10,
+        "notes": "夜間帯の交通規制スケジュールと連動",
+    },
+}
+
+
 def get_active_theme_name() -> str:
     theme_name = st.session_state.get("color_theme", "ライト")
     if theme_name not in THEME_PRESETS:
@@ -303,6 +329,7 @@ PROJECT_BASE_COLUMNS = [
     "現場所在地",
     "担当者",
     "協力会社",
+    "依存タスク",
     "備考",
     "リスクメモ",
 ]
@@ -407,6 +434,7 @@ def ensure_data_files() -> None:
                     "現場所在地": "福岡",
                     "担当者": "山中",
                     "協力会社": "九州型枠工業",
+                    "依存タスク": "",
                     "備考": "体育館の基礎および型枠一式",
                     "リスクメモ": "鉄筋納期に注意",
                 },
@@ -436,6 +464,7 @@ def ensure_data_files() -> None:
                     "現場所在地": "熊本",
                     "担当者": "近藤",
                     "協力会社": "熊本土木サービス",
+                    "依存タスク": "",
                     "備考": "河川敷工事の夜間作業あり",
                     "リスクメモ": "増水時は待機",
                 },
@@ -465,6 +494,7 @@ def ensure_data_files() -> None:
                     "現場所在地": "福岡",
                     "担当者": "山中",
                     "協力会社": "九州建設パートナーズ",
+                    "依存タスク": "",
                     "備考": "地下躯体に注意",
                     "リスクメモ": "地中障害物調査待ち",
                 },
@@ -494,6 +524,7 @@ def ensure_data_files() -> None:
                     "現場所在地": "福岡",
                     "担当者": "山中",
                     "協力会社": "九州建設パートナーズ",
+                    "依存タスク": "",
                     "備考": "JV案件",
                     "リスクメモ": "JV調整会議が必要",
                 },
@@ -523,6 +554,7 @@ def ensure_data_files() -> None:
                     "現場所在地": "福岡",
                     "担当者": "近藤",
                     "協力会社": "九州医療建設",
+                    "依存タスク": "",
                     "備考": "未定要素あり",
                     "リスクメモ": "医療機器仕様待ち",
                 },
@@ -611,6 +643,18 @@ def save_projects(df: pd.DataFrame) -> None:
     out_df = out_df.reindex(columns=PROJECT_BASE_COLUMNS)
     out_df.sort_values(by="着工日", inplace=True, ignore_index=True)
     out_df.to_csv(PROJECT_CSV, index=False)
+
+
+def generate_new_project_id(existing_ids: Set[str]) -> str:
+    pattern = re.compile(r"P(\d+)")
+    max_value = 0
+    for raw_id in existing_ids:
+        if not isinstance(raw_id, str):
+            continue
+        match = pattern.match(raw_id.strip())
+        if match:
+            max_value = max(max_value, int(match.group(1)))
+    return f"P{max_value + 1:03d}"
 
 
 def get_fiscal_year_range(year: int) -> Tuple[date, date]:
@@ -1130,6 +1174,19 @@ def create_timeline(
             return default
         return str(value)
 
+    duration_values: List[int] = []
+    for _, duration_row in df.iterrows():
+        start_dt = pd.to_datetime(duration_row.get("着工日"), errors="coerce")
+        end_dt = pd.to_datetime(duration_row.get("竣工日"), errors="coerce")
+        if pd.isna(start_dt) or pd.isna(end_dt):
+            continue
+        duration = (end_dt - start_dt).days + 1
+        if duration > 0:
+            duration_values.append(duration)
+
+    min_duration = min(duration_values) if duration_values else 0
+    max_duration = max(duration_values) if duration_values else 0
+
     fig = go.Figure()
     for _, row in df.iterrows():
         planned_start_dt = pd.to_datetime(row.get("着工日"), errors="coerce")
@@ -1165,6 +1222,7 @@ def create_timeline(
         risk_level = safe_str(row.get("リスクレベル"), "低")
         risk_comment = safe_str(row.get("リスクコメント"))
         notes = safe_str(row.get("備考"))
+        dependency_text = safe_str(row.get("依存タスク"), "-")
         hover_text = (
             f"案件名: {row['案件名']}<br>期間: {planned_start}〜{planned_end}<br>"
             f"得意先: {client}<br>工種: {category}<br>ステータス: {status}<br>"
@@ -1177,6 +1235,7 @@ def create_timeline(
             f"月平均必要人数: {avg_people:.1f}人<br>"
             f"回収: {format_date(row.get('回収開始日'))}〜{format_date(row.get('回収終了日'))}<br>"
             f"支払: {format_date(row.get('支払開始日'))}〜{format_date(row.get('支払終了日'))}<br>"
+            f"依存タスク: {dependency_text}<br>"
             f"リスク: {risk_level} ({risk_comment})<br>備考: {notes}"
         )
         raw_value = row.get(color_key, None)
@@ -1189,6 +1248,12 @@ def create_timeline(
         color_lookup_key = raw_value if has_raw_value else "未設定"
         bar_color = color_map.get(color_lookup_key, filters.bar_color)
         border_color = {"高": BRAND_COLORS["crimson"], "中": BRAND_COLORS["gold"]}.get(risk_level)
+        if max_duration > 0 and min_duration != max_duration:
+            opacity = 0.55 + 0.4 * ((duration_days - min_duration) / (max_duration - min_duration))
+        else:
+            opacity = 0.85 if duration_days > 0 else 0.75
+        line_color = border_color or "rgba(12,31,58,0.3)"
+        line_width = 3 if border_color else 1.2
         fig.add_trace(
             go.Bar(
                 x=[duration_days],
@@ -1197,9 +1262,10 @@ def create_timeline(
                 orientation="h",
                 marker=dict(
                     color=bar_color,
-                    line=dict(color=border_color or "rgba(12,31,58,0.3)", width=3 if border_color else 1),
+                    opacity=opacity,
+                    line=dict(color=line_color, width=line_width),
                 ),
-                hovertemplate=hover_text,
+                hovertemplate=hover_text + "<extra></extra>",
                 name=legend_value,
                 legendgroup=legend_value,
                 showlegend=showlegend,
@@ -1619,82 +1685,79 @@ def compute_monthly_aggregation(df: pd.DataFrame, fiscal_range: Tuple[date, date
 
 
 def render_control_panel(df: pd.DataFrame, masters: Dict[str, List[str]]) -> FilterState:
+    render_quick_project_form(df, masters)
+
     st.markdown("<div class='control-panel'>", unsafe_allow_html=True)
     with st.container():
-        col_period, col_display, col_export = st.columns([1.35, 1.5, 1.15])
+        st.markdown("#### 集計期間")
+        fiscal_year = st.selectbox(
+            "事業年度",
+            FISCAL_YEAR_OPTIONS,
+            index=FISCAL_YEAR_OPTIONS.index(DEFAULT_FISCAL_YEAR),
+            help="対象年度を変更すると、各種グラフ・表の期間が自動調整されます。",
+            key="fiscal_year_select",
+        )
+        start, end = get_fiscal_year_range(fiscal_year)
 
-        with col_period:
-            st.markdown("#### 集計期間")
-            fiscal_year = st.selectbox(
-                "事業年度",
-                FISCAL_YEAR_OPTIONS,
-                index=FISCAL_YEAR_OPTIONS.index(DEFAULT_FISCAL_YEAR),
-                help="対象年度を変更すると、各種グラフ・表の期間が自動調整されます。",
-                key="fiscal_year_select",
-            )
-            start, end = get_fiscal_year_range(fiscal_year)
+        st.markdown("#### 表示設定")
+        theme_options = list(THEME_PRESETS.keys())
+        default_theme = get_active_theme_name()
+        color_theme = st.selectbox(
+            "カラーモード",
+            theme_options,
+            index=theme_options.index(default_theme),
+            help="アプリ全体の配色モードを切り替えます。",
+            key="color_theme_select",
+        )
+        st.session_state["color_theme"] = color_theme
+        color_key = st.selectbox(
+            "色分けキー",
+            ["ステータス", "工種", "元請区分"],
+            help="ガントチャートや円グラフの色分け基準を切り替えます。",
+            key="color_key_select",
+        )
+        bar_color = st.color_picker(
+            "バー基調色",
+            DEFAULT_BAR_COLOR,
+            help="タイムラインのバー色をチームカラーに合わせて変更できます。",
+            key="bar_color_picker",
+        )
+        show_grid = st.checkbox(
+            "月グリッド線を表示",
+            True,
+            help="タイムラインに月単位のガイドを表示します。",
+            key="show_grid_checkbox",
+        )
+        label_density = st.selectbox(
+            "ラベル密度",
+            ["高", "中", "低"],
+            index=1,
+            help="チャート上のラベル表示量を調整します。",
+            key="label_density_select",
+        )
 
-        with col_display:
-            st.markdown("#### 表示設定")
-            theme_options = list(THEME_PRESETS.keys())
-            default_theme = get_active_theme_name()
-            color_theme = st.selectbox(
-                "カラーモード",
-                theme_options,
-                index=theme_options.index(default_theme),
-                help="アプリ全体の配色モードを切り替えます。",
-                key="color_theme_select",
-            )
-            st.session_state["color_theme"] = color_theme
-            color_key = st.selectbox(
-                "色分けキー",
-                ["ステータス", "工種", "元請区分"],
-                help="ガントチャートや円グラフの色分け基準を切り替えます。",
-                key="color_key_select",
-            )
-            bar_color = st.color_picker(
-                "バー基調色",
-                DEFAULT_BAR_COLOR,
-                help="タイムラインのバー色をチームカラーに合わせて変更できます。",
-                key="bar_color_picker",
-            )
-            show_grid = st.checkbox(
-                "月グリッド線を表示",
-                True,
-                help="タイムラインに月単位のガイドを表示します。",
-                key="show_grid_checkbox",
-            )
-            label_density = st.selectbox(
-                "ラベル密度",
-                ["高", "中", "低"],
-                index=1,
-                help="チャート上のラベル表示量を調整します。",
-                key="label_density_select",
-            )
+        st.markdown("#### データ入出力")
+        export_target = st.radio(
+            "エクスポート対象",
+            ["案件データ", "月次集計"],
+            index=0,
+            horizontal=False,
+            key="export_target_radio",
+            help="ダウンロードするデータセットを選択します。",
+        )
+        export_format = st.selectbox(
+            "出力形式",
+            ["CSV", "Excel"],
+            index=0,
+            key="export_format_select",
+            help="必要な形式でファイルを出力します。",
+        )
+        st.session_state["export_target"] = export_target
+        st.session_state["export_format"] = export_format
+        st.session_state["export_placeholder"] = st.empty()
 
-        with col_export:
-            st.markdown("#### データ入出力")
-            export_target = st.radio(
-                "エクスポート対象",
-                ["案件データ", "月次集計"],
-                index=0,
-                horizontal=True,
-                key="export_target_radio",
-                help="ダウンロードするデータセットを選択します。",
-            )
-            export_format = st.selectbox(
-                "出力形式",
-                ["CSV", "Excel"],
-                index=0,
-                key="export_format_select",
-                help="必要な形式でファイルを出力します。",
-            )
-            st.session_state["export_target"] = export_target
-            st.session_state["export_format"] = export_format
-            st.session_state["export_placeholder"] = st.empty()
-
-        st.markdown("#### クイックアクション")
-        render_quick_actions()
+        st.markdown("#### ショートカット")
+        render_quick_actions(layout="stack")
 
         with st.expander("詳細フィルタを表示", expanded=False):
             st.caption("条件を絞り込むと一覧・グラフが即座に更新されます。")
@@ -1929,6 +1992,23 @@ def apply_brand_theme() -> None:
             border: {config['panel_border']};
         }}
 
+        [data-theme=\"{slug}\"] .quick-entry-card {{
+            background: {config['surface_card']};
+            border-color: {config['surface_outline']};
+            box-shadow: {config['panel_shadow']};
+        }}
+
+        [data-theme=\"{slug}\"] .quick-entry-card div[data-testid=\"stFormSubmitButton\"] button {{
+            background: {config['primary_button_bg']};
+            color: {config['primary_button_color']};
+            box-shadow: {config['primary_button_shadow']};
+        }}
+
+        [data-theme=\"{slug}\"] .quick-entry-card div[data-testid=\"stFormSubmitButton\"] button:hover {{
+            background: {config['primary_button_hover']};
+            box-shadow: {config['primary_button_hover_shadow']};
+        }}
+
         [data-theme=\"{slug}\"] .control-panel .stButton > button {{
             background: {config['primary_button_bg']};
             color: {config['primary_button_color']};
@@ -2056,6 +2136,24 @@ def apply_brand_theme() -> None:
             color: var(--text-strong);
         }}
 
+        [data-testid="stSidebar"] > div:first-child {{
+            background: var(--surface-panel);
+            border-right: 1px solid var(--surface-outline);
+            padding: 1.2rem 1.1rem 2rem;
+        }}
+
+        [data-testid="stSidebar"] h1,
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] h3,
+        [data-testid="stSidebar"] h4,
+        [data-testid="stSidebar"] h5 {{
+            color: var(--heading-color);
+        }}
+
+        [data-testid="stSidebar"] label p {{
+            color: inherit !important;
+        }}
+
         [data-testid="stTextInput"] label,
         [data-testid="stNumberInput"] label,
         [data-testid="stSelectbox"] label,
@@ -2084,6 +2182,34 @@ def apply_brand_theme() -> None:
             font-size: 1rem;
             color: var(--text-muted);
             margin-bottom: 1.1rem;
+        }}
+
+        .quick-entry-card {{
+            background: var(--surface-card);
+            border-radius: 18px;
+            padding: 1rem 1.1rem 1.3rem;
+            margin-bottom: 1.2rem;
+            border: 1px solid var(--surface-outline);
+            box-shadow: 0 18px 36px rgba(11, 31, 58, 0.12);
+        }}
+
+        .quick-entry-header {{
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            color: var(--heading-color);
+        }}
+
+        .control-panel {{
+            border-radius: 18px;
+            padding: 1rem 1.1rem 1.4rem;
+            margin-top: 1.4rem;
+        }}
+
+        .control-panel h4,
+        .control-panel h5 {{
+            margin-top: 1rem;
+            margin-bottom: 0.35rem;
         }}
 
         .kpi-card {{
@@ -2476,7 +2602,7 @@ def render_page_header(fiscal_year: int, fiscal_range: Tuple[date, date]) -> Non
         )
 
 
-def render_quick_actions() -> None:
+def render_quick_actions(layout: str = "grid") -> None:
     actions = [
         {
             "label": "＋ 新規案件を登録",
@@ -2500,9 +2626,20 @@ def render_quick_actions() -> None:
         },
     ]
     st.markdown("<div class='quick-actions'>", unsafe_allow_html=True)
-    cols = st.columns(len(actions))
-    for idx, (col, action) in enumerate(zip(cols, actions)):
-        with col:
+    if layout == "grid" and len(actions) > 1:
+        cols = st.columns(len(actions))
+        for idx, (col, action) in enumerate(zip(cols, actions)):
+            with col:
+                if st.button(
+                    action["label"],
+                    use_container_width=True,
+                    key=f"qa_{idx}",
+                    help=action["description"],
+                ):
+                    action["callback"]()
+                st.caption(action["description"])
+    else:
+        for idx, action in enumerate(actions):
             if st.button(
                 action["label"],
                 use_container_width=True,
@@ -2516,6 +2653,168 @@ def render_quick_actions() -> None:
         "<a class='help-fab' href='#onboarding-guide' title='初めての方はこちらから操作手順を確認できます'>❓ チュートリアル</a>",
         unsafe_allow_html=True,
     )
+
+
+def render_quick_project_form(df: pd.DataFrame, masters: Dict[str, List[str]]) -> None:
+    success_message = st.session_state.pop("quick_add_success", None)
+    if success_message:
+        st.success(success_message)
+
+    st.markdown("<div class='quick-entry-card'>", unsafe_allow_html=True)
+
+    template_options = ["テンプレートを選択", *QUICK_TASK_TEMPLATES.keys()]
+    template_key = "quick_template_select"
+    current_template = st.selectbox(
+        "テンプレート",
+        template_options,
+        key=template_key,
+        help="よく使う工程のテンプレートを選ぶと名称や工種、工期が自動で入力されます。",
+    )
+    last_template = st.session_state.get("quick_selected_template")
+    if current_template == template_options[0]:
+        if last_template:
+            st.session_state["quick_selected_template"] = None
+    elif current_template != last_template:
+        template_data = QUICK_TASK_TEMPLATES[current_template]
+        st.session_state["quick_field_task_name"] = template_data.get("task_name", "")
+        st.session_state["quick_field_category"] = template_data.get("category", "未設定")
+        st.session_state["quick_field_status"] = template_data.get("status", "見積")
+        st.session_state["quick_field_duration"] = template_data.get("duration", 10)
+        st.session_state["quick_field_notes"] = template_data.get("notes", "")
+        st.session_state["quick_selected_template"] = current_template
+
+    clients = ["未設定", *get_active_master_values(masters, "clients")]
+    if st.session_state.get("quick_field_client") not in clients:
+        st.session_state["quick_field_client"] = clients[0]
+
+    categories = ["未設定", *get_active_master_values(masters, "categories")]
+    if st.session_state.get("quick_field_category") not in categories:
+        st.session_state["quick_field_category"] = categories[0]
+
+    base_statuses = ["見積", "受注", "施工中", "完了"]
+    existing_statuses = [s for s in df.get("ステータス", pd.Series(dtype=str)).dropna().unique().tolist() if s]
+    status_options = list(dict.fromkeys(base_statuses + existing_statuses))
+    if st.session_state.get("quick_field_status") not in status_options:
+        st.session_state["quick_field_status"] = status_options[0]
+
+    if "quick_field_start" not in st.session_state:
+        st.session_state["quick_field_start"] = date.today()
+    if "quick_field_duration" not in st.session_state:
+        st.session_state["quick_field_duration"] = 10
+    if "quick_field_notes" not in st.session_state:
+        st.session_state["quick_field_notes"] = ""
+
+    dependency_options = ["未選択"]
+    dependency_options.extend(
+        sorted({str(name) for name in df.get("案件名", pd.Series(dtype=str)).dropna().tolist() if str(name).strip()})
+    )
+    if st.session_state.get("quick_field_dependency") not in dependency_options:
+        st.session_state["quick_field_dependency"] = dependency_options[0]
+
+    with st.form("quick_project_form"):
+        st.markdown("<div class='quick-entry-header'>工程のクイック追加</div>", unsafe_allow_html=True)
+        task_name = st.text_input(
+            "タスク名",
+            key="quick_field_task_name",
+            placeholder="例：杭打ち工事、内装仕上げ など",
+            help="現場で使っている呼称で入力すると担当者にも伝わりやすくなります。",
+        )
+        client = st.selectbox("得意先", clients, key="quick_field_client")
+        category = st.selectbox("工種", categories, key="quick_field_category")
+        status = st.selectbox("ステータス", status_options, key="quick_field_status")
+        start_date = st.date_input(
+            "開始日",
+            key="quick_field_start",
+            help="カレンダーから日付を選択できます。",
+        )
+        duration = st.number_input(
+            "工期（日）",
+            min_value=1,
+            max_value=3650,
+            step=1,
+            key="quick_field_duration",
+            help="工期を入力すると終了日を自動計算します。",
+        )
+        finish_date = start_date + relativedelta(days=int(duration) - 1)
+        st.caption(f"完了予定日: {finish_date:%Y-%m-%d}（{int(duration)}日間）")
+        dependency = st.selectbox(
+            "依存タスク（任意）",
+            dependency_options,
+            key="quick_field_dependency",
+            help="先行して完了しておく必要がある工程があれば指定します。",
+        )
+        notes = st.text_area(
+            "備考メモ",
+            key="quick_field_notes",
+            height=90,
+            placeholder="注意点やリスク、引き継ぎ事項をメモできます",
+        )
+        submitted = st.form_submit_button("工程を追加", use_container_width=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    if not submitted:
+        return
+
+    cleaned_name = task_name.strip()
+    if not cleaned_name:
+        st.warning("タスク名を入力してください。")
+        return
+
+    dependency_value = "" if dependency in (None, "未選択") else dependency
+    notes_value = notes.strip()
+    if dependency_value:
+        dependency_note = f"依存: {dependency_value}"
+        notes_value = f"{dependency_note}\n{notes_value}" if notes_value else dependency_note
+
+    try:
+        new_id = generate_new_project_id(set(df.get("id", pd.Series(dtype=str)).astype(str)))
+        finish_date = start_date + relativedelta(days=int(duration) - 1)
+        new_row = {
+            "id": new_id,
+            "案件名": cleaned_name,
+            "得意先": "" if client == "未設定" else client,
+            "元請区分": "",
+            "工種": "" if category == "未設定" else category,
+            "ステータス": status,
+            "着工日": start_date,
+            "竣工日": finish_date,
+            "実際着工日": "",
+            "実際竣工日": "",
+            "受注予定額": 0,
+            "受注金額": 0,
+            "予算原価": 0,
+            "予定原価": 0,
+            "実績原価": 0,
+            "粗利率": 0,
+            "進捗率": 0,
+            "月平均必要人数": 0,
+            "回収開始日": finish_date,
+            "回収終了日": finish_date,
+            "支払開始日": start_date,
+            "支払終了日": finish_date,
+            "現場所在地": "",
+            "担当者": "",
+            "協力会社": "",
+            "依存タスク": dependency_value,
+            "備考": notes_value,
+            "リスクメモ": "",
+        }
+        updated_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        save_projects(updated_df)
+    except Exception as exc:
+        st.error(f"工程の保存に失敗しました: {exc}")
+        return
+
+    st.session_state["quick_add_success"] = f"{cleaned_name} を追加しました（ID: {new_id}）。"
+    st.session_state["quick_template_select"] = template_options[0]
+    st.session_state["quick_selected_template"] = None
+    st.session_state["quick_field_task_name"] = ""
+    st.session_state["quick_field_notes"] = ""
+    st.session_state["quick_field_dependency"] = dependency_options[0]
+    st.session_state["quick_field_start"] = finish_date
+    st.session_state["quick_field_duration"] = 10
+    st.experimental_rerun()
 
 
 def prepare_export(df: Optional[pd.DataFrame], file_format: str = "CSV"):
@@ -2781,6 +3080,7 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
         "現場所在地",
         "担当者",
         "協力会社",
+        "依存タスク",
         "備考",
         "リスクメモ",
         "粗利額",
@@ -2827,6 +3127,7 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
         "予算超過": st.column_config.CheckboxColumn("予算超過", disabled=True),
         "リスクレベル": st.column_config.TextColumn("リスクレベル", disabled=True),
         "リスクコメント": st.column_config.TextColumn("リスクコメント", disabled=True),
+        "依存タスク": st.column_config.TextColumn("依存タスク", help="先行する工程や関連タスクをメモできます。"),
     }
 
     column_config.update(
@@ -3277,8 +3578,6 @@ def render_settings_tab(masters: Dict[str, List[str]]) -> None:
     st.markdown(
         """
         <style>
-        [data-testid="stSidebar"] {display: none !important;}
-        [data-testid="stSidebarNavSeparator"] {display: none !important;}
         .settings-nav {display:flex; gap:0.75rem; flex-wrap:wrap; margin:0.5rem 0 1.2rem;}
         .settings-nav a {
             background: var(--brand-navy);
@@ -3455,7 +3754,8 @@ def main() -> None:
 
     render_page_header(header_year, header_range)
 
-    filters = render_control_panel(projects_df, masters)
+    with st.sidebar:
+        filters = render_control_panel(projects_df, masters)
     fiscal_range = get_fiscal_year_range(filters.fiscal_year)
     filtered_df = apply_filters(projects_df, filters)
     enriched_filtered_df = enrich_projects(filtered_df) if not filtered_df.empty else filtered_df
