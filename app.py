@@ -18,9 +18,160 @@ from gantt_chart import create_project_gantt_chart
 DATA_DIR = "data"
 PROJECT_CSV = os.path.join(DATA_DIR, "projects.csv")
 MASTERS_JSON = os.path.join(DATA_DIR, "masters.json")
+SCENARIOS_JSON = os.path.join(DATA_DIR, "scenarios.json")
 FISCAL_START_MONTH = 7
 DEFAULT_FISCAL_YEAR = 2025
 FISCAL_YEAR_OPTIONS = list(range(2024, 2029))
+
+VALUE_CHAIN_STAGES = ["原材料調達", "施工準備", "施工", "検査", "引き渡し"]
+SCENARIO_RISK_LEVELS = ["低", "中", "高"]
+STATUS_VALUE_CHAIN_MAP = {
+    "見積": "原材料調達",
+    "受注": "施工準備",
+    "施工中": "施工",
+    "完了": "引き渡し",
+}
+
+DEFAULT_SCENARIOS = {
+    "現行計画": [
+        {
+            "Task": "基礎工事",
+            "Start": "2025-10-01",
+            "Finish": "2025-10-10",
+            "Resource": "基礎",
+            "Department": "土木部",
+            "ValueChain": "施工",
+            "Progress": 20,
+            "CostBudget": 10000000,
+            "CostActual": 8000000,
+            "RiskLevel": "中",
+        },
+        {
+            "Task": "躯体工事",
+            "Start": "2025-10-11",
+            "Finish": "2025-11-05",
+            "Resource": "躯体",
+            "Department": "施工管理部",
+            "ValueChain": "施工",
+            "Progress": 0,
+            "CostBudget": 30000000,
+            "CostActual": 0,
+            "RiskLevel": "中",
+        },
+        {
+            "Task": "検査・引渡し準備",
+            "Start": "2025-11-06",
+            "Finish": "2025-11-15",
+            "Resource": "検査",
+            "Department": "品質保証部",
+            "ValueChain": "検査",
+            "Progress": 0,
+            "CostBudget": 5000000,
+            "CostActual": 0,
+            "RiskLevel": "低",
+        },
+    ],
+    "短縮案": [
+        {
+            "Task": "基礎工事",
+            "Start": "2025-09-28",
+            "Finish": "2025-10-07",
+            "Resource": "基礎",
+            "Department": "土木部",
+            "ValueChain": "施工",
+            "Progress": 30,
+            "CostBudget": 10500000,
+            "CostActual": 8400000,
+            "RiskLevel": "中",
+        },
+        {
+            "Task": "躯体工事",
+            "Start": "2025-10-08",
+            "Finish": "2025-10-30",
+            "Resource": "躯体",
+            "Department": "施工管理部",
+            "ValueChain": "施工",
+            "Progress": 10,
+            "CostBudget": 31500000,
+            "CostActual": 2000000,
+            "RiskLevel": "高",
+        },
+        {
+            "Task": "内装仕上げ",
+            "Start": "2025-10-31",
+            "Finish": "2025-11-18",
+            "Resource": "内装",
+            "Department": "仕上管理部",
+            "ValueChain": "施工",
+            "Progress": 0,
+            "CostBudget": 8000000,
+            "CostActual": 0,
+            "RiskLevel": "中",
+        },
+        {
+            "Task": "検査・引渡し",
+            "Start": "2025-11-19",
+            "Finish": "2025-11-27",
+            "Resource": "検査",
+            "Department": "品質保証部",
+            "ValueChain": "検査",
+            "Progress": 0,
+            "CostBudget": 4500000,
+            "CostActual": 0,
+            "RiskLevel": "低",
+        },
+    ],
+    "延長案": [
+        {
+            "Task": "基礎工事",
+            "Start": "2025-10-05",
+            "Finish": "2025-10-20",
+            "Resource": "基礎",
+            "Department": "土木部",
+            "ValueChain": "施工",
+            "Progress": 10,
+            "CostBudget": 9500000,
+            "CostActual": 8200000,
+            "RiskLevel": "低",
+        },
+        {
+            "Task": "躯体工事",
+            "Start": "2025-10-21",
+            "Finish": "2025-11-25",
+            "Resource": "躯体",
+            "Department": "施工管理部",
+            "ValueChain": "施工",
+            "Progress": 0,
+            "CostBudget": 28500000,
+            "CostActual": 0,
+            "RiskLevel": "中",
+        },
+        {
+            "Task": "外構・仕上げ",
+            "Start": "2025-11-26",
+            "Finish": "2025-12-20",
+            "Resource": "外構",
+            "Department": "仕上管理部",
+            "ValueChain": "施工",
+            "Progress": 0,
+            "CostBudget": 9000000,
+            "CostActual": 0,
+            "RiskLevel": "中",
+        },
+        {
+            "Task": "検査・引渡し",
+            "Start": "2025-12-21",
+            "Finish": "2025-12-30",
+            "Resource": "検査",
+            "Department": "品質保証部",
+            "ValueChain": "引き渡し",
+            "Progress": 0,
+            "CostBudget": 5000000,
+            "CostActual": 0,
+            "RiskLevel": "低",
+        },
+    ],
+}
 
 BRAND_COLORS = {
     "navy": "#0B1F3A",
@@ -326,9 +477,12 @@ PROJECT_BASE_COLUMNS = [
     "ステータス",
     *PROJECT_DATE_COLUMNS,
     *PROJECT_NUMERIC_COLUMNS,
+    "担当部署",
+    "バリューチェーン工程",
     "現場所在地",
     "担当者",
     "協力会社",
+    "リスク度合い",
     "依存タスク",
     "備考",
     "リスクメモ",
@@ -427,6 +581,9 @@ def ensure_data_files() -> None:
                     "粗利率": 24,
                     "進捗率": 55,
                     "月平均必要人数": 6,
+                    "担当部署": "施工管理部",
+                    "バリューチェーン工程": "施工",
+                    "リスク度合い": "中",
                     "回収開始日": "2025-08-15",
                     "回収終了日": "2025-11-30",
                     "支払開始日": "2025-07-31",
@@ -457,6 +614,9 @@ def ensure_data_files() -> None:
                     "粗利率": 23,
                     "進捗率": 48,
                     "月平均必要人数": 7,
+                    "担当部署": "土木部",
+                    "バリューチェーン工程": "施工",
+                    "リスク度合い": "高",
                     "回収開始日": "2025-09-01",
                     "回収終了日": "2026-01-31",
                     "支払開始日": "2025-08-31",
@@ -487,6 +647,9 @@ def ensure_data_files() -> None:
                     "粗利率": 24,
                     "進捗率": 10,
                     "月平均必要人数": 8,
+                    "担当部署": "建築部",
+                    "バリューチェーン工程": "施工準備",
+                    "リスク度合い": "中",
                     "回収開始日": "2025-10-01",
                     "回収終了日": "2026-04-30",
                     "支払開始日": "2025-09-30",
@@ -517,6 +680,9 @@ def ensure_data_files() -> None:
                     "粗利率": 23,
                     "進捗率": 5,
                     "月平均必要人数": 9,
+                    "担当部署": "建築部",
+                    "バリューチェーン工程": "施工準備",
+                    "リスク度合い": "中",
                     "回収開始日": "2026-01-15",
                     "回収終了日": "2026-06-30",
                     "支払開始日": "2025-11-30",
@@ -547,6 +713,9 @@ def ensure_data_files() -> None:
                     "粗利率": 22,
                     "進捗率": 0,
                     "月平均必要人数": 7,
+                    "担当部署": "医療PJ室",
+                    "バリューチェーン工程": "原材料調達",
+                    "リスク度合い": "中",
                     "回収開始日": "2026-02-01",
                     "回収終了日": "2026-07-31",
                     "支払開始日": "2025-12-31",
@@ -560,6 +729,10 @@ def ensure_data_files() -> None:
                 },
             ]
         )
+
+    if not os.path.exists(SCENARIOS_JSON):
+        with open(SCENARIOS_JSON, "w", encoding="utf-8") as f:
+            json.dump(DEFAULT_SCENARIOS, f, ensure_ascii=False, indent=2)
 
     if not os.path.exists(MASTERS_JSON):
         masters = {
@@ -644,6 +817,275 @@ def save_projects(df: pd.DataFrame) -> None:
     out_df.sort_values(by="着工日", inplace=True, ignore_index=True)
     out_df.to_csv(PROJECT_CSV, index=False)
 
+
+def load_scenarios() -> Dict[str, pd.DataFrame]:
+    if not os.path.exists(SCENARIOS_JSON):
+        return {}
+    with open(SCENARIOS_JSON, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    scenarios: Dict[str, pd.DataFrame] = {}
+    for name, records in (raw or {}).items():
+        frame = pd.DataFrame(records)
+        if not frame.empty:
+            for col in ["Start", "Finish"]:
+                if col in frame.columns:
+                    frame[col] = pd.to_datetime(frame[col], errors="coerce")
+            for numeric_col in ["Progress", "CostBudget", "CostActual"]:
+                if numeric_col in frame.columns:
+                    frame[numeric_col] = pd.to_numeric(frame[numeric_col], errors="coerce").fillna(0.0)
+            if "RiskLevel" in frame.columns:
+                frame["RiskLevel"] = frame["RiskLevel"].fillna("低")
+            if "Department" not in frame.columns:
+                frame["Department"] = ""
+            if "ValueChain" not in frame.columns:
+                frame["ValueChain"] = ""
+        scenarios[name] = frame
+    return scenarios
+
+
+def save_scenarios(scenarios: Dict[str, pd.DataFrame]) -> None:
+    serializable: Dict[str, List[Dict[str, object]]] = {}
+    for name, frame in scenarios.items():
+        if frame.empty:
+            serializable[name] = []
+            continue
+        prepared = frame.copy()
+        for col in ["Start", "Finish"]:
+            if col in prepared.columns:
+                prepared[col] = pd.to_datetime(prepared[col], errors="coerce").dt.strftime("%Y-%m-%d")
+        serializable[name] = prepared.to_dict("records")
+    with open(SCENARIOS_JSON, "w", encoding="utf-8") as f:
+        json.dump(serializable, f, ensure_ascii=False, indent=2)
+
+
+def get_scenario_state() -> Dict[str, pd.DataFrame]:
+    if "scenario_frames" not in st.session_state:
+        st.session_state["scenario_frames"] = load_scenarios()
+    return st.session_state["scenario_frames"]
+
+
+def calculate_scenario_metrics(df: pd.DataFrame) -> Dict[str, Union[int, float, str]]:
+    if df.empty:
+        return {
+            "task_count": 0,
+            "duration_days": 0,
+            "avg_progress": 0.0,
+            "total_budget": 0.0,
+            "total_actual": 0.0,
+            "cost_variance": 0.0,
+            "critical_task": "-",
+            "critical_duration": 0,
+            "start_date": "-",
+            "end_date": "-",
+        }
+
+    start_dates = pd.to_datetime(df.get("Start"), errors="coerce")
+    finish_dates = pd.to_datetime(df.get("Finish"), errors="coerce")
+    valid_start = start_dates.dropna()
+    valid_finish = finish_dates.dropna()
+    total_budget = float(df.get("CostBudget", pd.Series(dtype=float)).sum())
+    total_actual = float(df.get("CostActual", pd.Series(dtype=float)).sum())
+    durations = (finish_dates - start_dates).dt.days + 1
+    durations = durations.fillna(0)
+    critical_idx = int(durations.idxmax()) if not durations.empty else -1
+    critical_task = "-"
+    critical_duration = 0
+    if critical_idx >= 0 and critical_idx in df.index:
+        critical_task = str(df.loc[critical_idx, "Task"])
+        critical_duration = int(max(durations.loc[critical_idx], 0))
+    start_label = valid_start.min().strftime("%Y-%m-%d") if not valid_start.empty else "-"
+    end_label = valid_finish.max().strftime("%Y-%m-%d") if not valid_finish.empty else "-"
+    duration_days = 0
+    if not valid_start.empty and not valid_finish.empty:
+        duration_days = int((valid_finish.max() - valid_start.min()).days + 1)
+
+    avg_progress = float(df.get("Progress", pd.Series(dtype=float)).mean() or 0.0)
+    return {
+        "task_count": int(len(df)),
+        "duration_days": duration_days,
+        "avg_progress": avg_progress,
+        "total_budget": total_budget,
+        "total_actual": total_actual,
+        "cost_variance": total_actual - total_budget,
+        "critical_task": critical_task,
+        "critical_duration": critical_duration,
+        "start_date": start_label,
+        "end_date": end_label,
+    }
+
+
+def render_scenario_tab() -> None:
+    st.subheader("シナリオ比較")
+    scenarios = get_scenario_state()
+    if not scenarios:
+        st.info("比較できるシナリオがありません。`data/scenarios.json` にシナリオを登録してください。")
+        return
+
+    summary_records: List[Dict[str, Union[str, float, int]]] = []
+    for name, df in scenarios.items():
+        metrics = calculate_scenario_metrics(df)
+        summary_records.append(
+            {
+                "シナリオ": name,
+                "タスク数": metrics["task_count"],
+                "総工期(日)": metrics["duration_days"],
+                "平均進捗率": metrics["avg_progress"],
+                "総予算": metrics["total_budget"],
+                "総実績": metrics["total_actual"],
+                "コスト差額": metrics["cost_variance"],
+                "クリティカルタスク": metrics["critical_task"],
+                "完了予定日": metrics["end_date"],
+            }
+        )
+
+    if summary_records:
+        st.markdown("### サマリー指標")
+        summary_df = pd.DataFrame(summary_records)
+        summary_view = style_table_numbers(
+            summary_df,
+            currency_columns=["総予算", "総実績", "コスト差額"],
+            percentage_columns=["平均進捗率"],
+            decimal_columns=None,
+        )
+        st.dataframe(summary_view, use_container_width=True)
+
+    tab_names = list(scenarios.keys())
+    tabs = st.tabs(tab_names)
+    for idx, name in enumerate(tab_names):
+        df = scenarios[name]
+        metrics = calculate_scenario_metrics(df)
+        with tabs[idx]:
+            st.markdown(f"#### {name}")
+            info_cols = st.columns(4)
+            info_cols[0].metric("総工期 (日)", metrics["duration_days"])
+            info_cols[1].metric("平均進捗率", f"{metrics['avg_progress']:.1f}%")
+            info_cols[2].metric("総予算", f"{metrics['total_budget']:,.0f} 円")
+            info_cols[3].metric("コスト差額", f"{metrics['cost_variance']:,.0f} 円")
+
+            if metrics["avg_progress"]:
+                st.progress(min(max(metrics["avg_progress"] / 100, 0.0), 1.0))
+
+            display_df = df.copy()
+            if not display_df.empty:
+                for col in ["Start", "Finish"]:
+                    if col in display_df.columns:
+                        display_df[col] = pd.to_datetime(display_df[col], errors="coerce").dt.strftime("%Y-%m-%d")
+                display_df = display_df.rename(
+                    columns={
+                        "Task": "タスク",
+                        "Start": "開始日",
+                        "Finish": "終了日",
+                        "Resource": "リソース",
+                        "Department": "担当部署",
+                        "ValueChain": "バリューチェーン",
+                        "Progress": "進捗率",
+                        "CostBudget": "予算コスト",
+                        "CostActual": "実績コスト",
+                        "RiskLevel": "リスク度合い",
+                    }
+                )
+                st.dataframe(
+                    style_table_numbers(
+                        display_df,
+                        currency_columns=["予算コスト", "実績コスト"],
+                        percentage_columns=["進捗率"],
+                    ),
+                    use_container_width=True,
+                )
+            else:
+                st.info("タスクが登録されていません。")
+
+            if not df.empty:
+                task_col, cost_col = st.columns([1, 1])
+                task_names = df["Task"].astype(str).tolist()
+                selected_task = task_col.selectbox("進捗を更新するタスク", task_names, key=f"{name}_task")
+                target_row = df[df["Task"].astype(str) == selected_task].iloc[0]
+                progress_value = float(target_row.get("Progress", 0.0))
+                new_progress = task_col.slider(
+                    "進捗率 (％)",
+                    min_value=0.0,
+                    max_value=100.0,
+                    step=1.0,
+                    value=progress_value,
+                    key=f"{name}_progress",
+                )
+                actual_cost_value = float(target_row.get("CostActual", 0.0))
+                new_actual_cost = cost_col.number_input(
+                    "実績コスト (円)",
+                    min_value=0.0,
+                    value=actual_cost_value,
+                    step=100000.0,
+                    format="%.0f",
+                    key=f"{name}_actual_cost",
+                )
+                risk_value = str(target_row.get("RiskLevel", "低"))
+                new_risk = cost_col.selectbox(
+                    "リスク度合い",
+                    SCENARIO_RISK_LEVELS,
+                    index=SCENARIO_RISK_LEVELS.index(risk_value) if risk_value in SCENARIO_RISK_LEVELS else 0,
+                    key=f"{name}_risk",
+                )
+
+                if st.button("タスクを更新", key=f"{name}_update"):
+                    scenario_frames = get_scenario_state()
+                    updated_df = scenario_frames[name].copy()
+                    update_index = updated_df[updated_df["Task"].astype(str) == selected_task].index
+                    if not update_index.empty:
+                        idx0 = update_index[0]
+                        updated_df.loc[idx0, "Progress"] = new_progress
+                        updated_df.loc[idx0, "CostActual"] = new_actual_cost
+                        updated_df.loc[idx0, "RiskLevel"] = new_risk
+                        scenario_frames[name] = updated_df
+                        save_scenarios(scenario_frames)
+                        st.success("シナリオを更新しました。")
+                        st.experimental_rerun()
+
+            if not df.empty and "ValueChain" in df.columns:
+                chain_summary = (
+                    df.groupby("ValueChain")[["CostBudget", "CostActual"]]
+                    .sum()
+                    .reindex(VALUE_CHAIN_STAGES, fill_value=0.0)
+                    .reset_index()
+                    .rename(columns={"ValueChain": "バリューチェーン"})
+                )
+                if chain_summary[["CostBudget", "CostActual"]].sum().sum() > 0:
+                    st.markdown("##### バリューチェーン別コスト")
+                    chain_fig = go.Figure()
+                    chain_fig.add_bar(
+                        x=chain_summary["バリューチェーン"],
+                        y=chain_summary["CostBudget"],
+                        name="予算コスト",
+                        marker=dict(color=BRAND_COLORS["sky"]),
+                    )
+                    chain_fig.add_bar(
+                        x=chain_summary["バリューチェーン"],
+                        y=chain_summary["CostActual"],
+                        name="実績コスト",
+                        marker=dict(color=BRAND_COLORS["navy"]),
+                    )
+                    chain_fig = apply_brand_layout(
+                        chain_fig,
+                        barmode="group",
+                        xaxis=dict(title="工程", tickangle=-15),
+                        yaxis=dict(title="金額"),
+                    )
+                    chain_fig = apply_plotly_theme(chain_fig)
+                    st.plotly_chart(chain_fig, use_container_width=True)
+                    st.dataframe(
+                        style_table_numbers(
+                            chain_summary,
+                            currency_columns=["CostBudget", "CostActual"],
+                        ),
+                        use_container_width=True,
+                    )
+            csv_bytes = df.to_csv(index=False).encode("utf-8-sig")
+            st.download_button(
+                "CSV出力",
+                data=csv_bytes,
+                file_name=f"{name}_scenario.csv",
+                mime="text/csv",
+                key=f"{name}_download",
+            )
 
 def generate_new_project_id(existing_ids: Set[str]) -> str:
     pattern = re.compile(r"P(\d+)")
@@ -835,6 +1277,12 @@ def determine_risk_level(row: pd.Series) -> Tuple[str, str]:
     if delay_days > 0:
         level = "高"
         reasons.append(f"遅延{int(delay_days)}日")
+    manual_level = str(row.get("リスク度合い", "")).strip()
+    if manual_level in risk_order:
+        if risk_order[manual_level] > risk_order[level]:
+            level = manual_level
+        if manual_level and manual_level != "低":
+            reasons.append(f"手動評価:{manual_level}")
     if not reasons and row.get("リスクメモ"):
         level = "中"
         reasons.append(str(row.get("リスクメモ")))
@@ -859,6 +1307,11 @@ def enrich_projects(df: pd.DataFrame) -> pd.DataFrame:
         enriched["実際竣工日"] = pd.NaT
     if "竣工日" not in enriched.columns:
         enriched["竣工日"] = pd.NaT
+    if "バリューチェーン工程" not in enriched.columns:
+        enriched["バリューチェーン工程"] = ""
+    status_chain = enriched.get("ステータス", pd.Series(dtype=object)).map(STATUS_VALUE_CHAIN_MAP)
+    chain_mask = enriched["バリューチェーン工程"].fillna("").astype(str).str.strip() == ""
+    enriched.loc[chain_mask, "バリューチェーン工程"] = status_chain.fillna("施工")
     enriched["粗利額"] = enriched["受注金額"] - enriched["予定原価"]
     with np.errstate(divide="ignore", invalid="ignore"):
         enriched["原価率"] = np.where(
@@ -1588,6 +2041,10 @@ def validate_projects(df: pd.DataFrame) -> Tuple[bool, List[str]]:
             errors.append(f"{col} は 0 以上にしてください。")
     if "進捗率" in df.columns and (~df["進捗率"].between(0, 100, inclusive="both")).any():
         errors.append("進捗率は 0〜100 の範囲にしてください。")
+    if "リスク度合い" in df.columns:
+        invalid_risk = ~df["リスク度合い"].fillna("").isin(["", *SCENARIO_RISK_LEVELS])
+        if invalid_risk.any():
+            errors.append("リスク度合いは 空白 または 低/中/高 のいずれかにしてください。")
     for idx, row in df.iterrows():
         if pd.isna(row["着工日"]) or pd.isna(row["竣工日"]):
             errors.append(f"行 {idx + 1}: 着工日・竣工日は必須です。")
@@ -2826,7 +3283,7 @@ def prepare_export(df: Optional[pd.DataFrame], file_format: str = "CSV"):
         df.to_excel(buffer, index=False)
         buffer.seek(0)
         return buffer.getvalue()
-    return df.to_csv(index=False, line_terminator="\r\n").encode("utf-8-sig")
+    return df.to_csv(index=False, lineterminator="\r\n").encode("utf-8-sig")
 
 
 def load_uploaded_dataframe(uploaded) -> pd.DataFrame:
@@ -2922,6 +3379,9 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
             "担当者": managers[0] if managers else "",
             "月平均必要人数": 0.0,
             "備考": "",
+            "担当部署": "",
+            "バリューチェーン工程": VALUE_CHAIN_STAGES[0],
+            "リスク度合い": SCENARIO_RISK_LEVELS[0],
         }
         draft = {**default_draft, **st.session_state.get("project_form_draft", {})}
 
@@ -2974,6 +3434,17 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
                 manpower_value = st.number_input(
                     "月平均必要人数", min_value=0.0, value=float(draft.get("月平均必要人数", 0.0)), step=0.5
                 )
+                department_value = st.text_input("担当部署", value=draft.get("担当部署", ""))
+                value_chain_value = st.selectbox(
+                    "バリューチェーン工程",
+                    VALUE_CHAIN_STAGES,
+                    index=find_index(VALUE_CHAIN_STAGES, draft.get("バリューチェーン工程", VALUE_CHAIN_STAGES[0])),
+                )
+                risk_degree_value = st.selectbox(
+                    "リスク度合い",
+                    SCENARIO_RISK_LEVELS,
+                    index=find_index(SCENARIO_RISK_LEVELS, draft.get("リスク度合い", SCENARIO_RISK_LEVELS[0])),
+                )
                 note_value = st.text_area("備考", value=draft.get("備考", ""))
 
                 submit_col1, submit_col2, submit_col3 = st.columns([1, 1, 2])
@@ -2995,6 +3466,9 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
                     "粗利率": margin_value,
                     "担当者": manager_value,
                     "月平均必要人数": manpower_value,
+                    "担当部署": department_value.strip(),
+                    "バリューチェーン工程": value_chain_value,
+                    "リスク度合い": risk_degree_value,
                     "備考": note_value,
                 }
 
@@ -3074,6 +3548,8 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
         "粗利率",
         "進捗率",
         "月平均必要人数",
+        "担当部署",
+        "バリューチェーン工程",
         "回収開始日",
         "回収終了日",
         "支払開始日",
@@ -3081,6 +3557,7 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
         "現場所在地",
         "担当者",
         "協力会社",
+        "リスク度合い",
         "依存タスク",
         "備考",
         "リスクメモ",
@@ -3116,6 +3593,9 @@ def render_projects_tab(full_df: pd.DataFrame, filtered_df: pd.DataFrame, master
         "粗利率": st.column_config.NumberColumn("粗利率", format="%.1f %%", min_value=-100, max_value=100),
         "進捗率": st.column_config.NumberColumn("進捗率", format="%.1f %%", min_value=0, max_value=100),
         "月平均必要人数": st.column_config.NumberColumn("月平均必要人数", format="%.1f 人", min_value=0),
+        "担当部署": st.column_config.TextColumn("担当部署"),
+        "バリューチェーン工程": st.column_config.TextColumn("バリューチェーン工程", help="原材料調達〜引き渡しまでの工程を指定します。"),
+        "リスク度合い": st.column_config.TextColumn("リスク度合い"),
         "粗利額": st.column_config.NumberColumn("粗利額", format="%,d 円", disabled=True),
         "原価率": st.column_config.NumberColumn("原価率", format="%.1f %%", disabled=True),
         "受注差異": st.column_config.NumberColumn("受注差異", format="%,d 円", disabled=True),
@@ -3530,6 +4010,62 @@ def render_summary_tab(df: pd.DataFrame, monthly: pd.DataFrame) -> None:
         hist = apply_plotly_theme(hist)
         st.plotly_chart(hist, use_container_width=True)
 
+    st.markdown("### バリューチェーン分析")
+    if enriched.empty:
+        st.info("対象データがありません。案件にバリューチェーン工程を設定してください。")
+    else:
+        chain_summary = (
+            enriched.groupby("バリューチェーン工程")[["受注金額", "予定原価", "実績原価", "粗利額"]]
+            .sum()
+            .reindex(VALUE_CHAIN_STAGES, fill_value=0.0)
+            .reset_index()
+        )
+        chain_summary.rename(columns={"バリューチェーン工程": "工程"}, inplace=True)
+        if chain_summary[["受注金額", "予定原価", "粗利額"]].to_numpy().sum() == 0:
+            st.info("バリューチェーン工程に紐づく金額データがありません。")
+        else:
+            chain_fig = go.Figure()
+            chain_fig.add_bar(
+                x=chain_summary["工程"],
+                y=chain_summary["受注金額"],
+                name="受注金額",
+                marker=dict(color=BRAND_COLORS["navy"]),
+            )
+            chain_fig.add_bar(
+                x=chain_summary["工程"],
+                y=chain_summary["予定原価"],
+                name="予定原価",
+                marker=dict(color=BRAND_COLORS["sky"]),
+            )
+            chain_fig.add_trace(
+                go.Scatter(
+                    x=chain_summary["工程"],
+                    y=chain_summary["粗利額"],
+                    mode="lines+markers",
+                    name="粗利額",
+                    yaxis="y2",
+                    marker=dict(color=BRAND_COLORS["gold"], size=8),
+                    line=dict(color=BRAND_COLORS["gold"], width=3),
+                )
+            )
+            chain_fig = apply_brand_layout(
+                chain_fig,
+                barmode="group",
+                xaxis=dict(title="バリューチェーン工程", tickangle=-15),
+                yaxis=dict(title="金額"),
+                yaxis2=dict(title="粗利額", overlaying="y", side="right"),
+                height=420,
+            )
+            chain_fig = apply_plotly_theme(chain_fig)
+            st.plotly_chart(chain_fig, use_container_width=True)
+            st.dataframe(
+                style_table_numbers(
+                    chain_summary,
+                    currency_columns=["受注金額", "予定原価", "実績原価", "粗利額"],
+                ),
+                use_container_width=True,
+            )
+
     if not enriched.empty:
         st.markdown("### 原価率分析")
         project_ratio = enriched[["案件名", "受注金額", "予定原価", "原価率", "リスクレベル"]]
@@ -3786,7 +4322,7 @@ def main() -> None:
             mime=mime,
         )
 
-    tab_labels = ["タイムライン", "案件一覧", "集計/分析", "設定"]
+    tab_labels = ["タイムライン", "案件一覧", "集計/分析", "シナリオ比較", "設定"]
     if "main_tabs" not in st.session_state:
         st.session_state["main_tabs"] = tab_labels[0]
     selected_tab = st.radio(
@@ -3856,6 +4392,10 @@ def main() -> None:
     elif selected_tab == "集計/分析":
         st.markdown("<div id='analysis-section'></div>", unsafe_allow_html=True)
         render_summary_tab(enriched_filtered_df, monthly_df)
+
+    elif selected_tab == "シナリオ比較":
+        st.markdown("<div id='scenario-section'></div>", unsafe_allow_html=True)
+        render_scenario_tab()
 
     else:
         render_settings_tab(masters)
